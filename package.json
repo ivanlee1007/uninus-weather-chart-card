@@ -1,6 +1,6 @@
 {
   "name": "weather-chart-card",
-  "version": "1.6.5",
+  "version": "1.6.6",
   "description": "UNiNUS Weather Chart Card with Home Assistant-native editor selectors and enhanced weather visualization",
   "keywords": [
     "home-assistant",
@@ -40,7 +40,7 @@
   "scripts": {
     "start": "rollup -c rollup.config.dev.js --watch",
     "build": "npm run lint && npm run rollup",
-    "lint": "eslint 'src/**/*.js'",
+    "lint": "eslint src --ext .js",
     "rollup": "rollup -c"
   }
 }

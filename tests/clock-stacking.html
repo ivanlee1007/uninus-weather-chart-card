@@ -1,0 +1,100 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Synthetic Home Assistant clock stacking fixture</title>
+<style>
+  body { margin: 0; font-family: Arial, sans-serif; }
+  #dashboard { width: min(400px, calc(100% - 32px)); margin: 16px auto; }
+  ha-card { display: block; background: white; border-radius: 12px; box-shadow: 0 2px 8px #888; }
+  #backdrop { display: none; position: fixed; inset: 0; background: #0009; z-index: 4; }
+  #modal { display: none; position: fixed; inset: 0; background: #fffc; z-index: 5; }
+  body.open #backdrop, body.open #modal { display: block; }
+  body.backdrop-only #backdrop { display: block; }
+</style>
+<div id="dashboard"><weather-chart-card></weather-chart-card></div>
+<div id="backdrop"></div><div id="modal">Synthetic HA dialog</div>
+<script>
+  // Minimal synthetic ha-card with a Shadow DOM header and slotted real card content.
+  customElements.define('ha-card', class extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: 'open' });
+    }
+    connectedCallback() {
+      const header = this.getAttribute('header');
+      this.shadowRoot.innerHTML = `${header ? `<div style="padding:16px;height:24px">${header}</div>` : ''}<slot></slot>`;
+    }
+  });
+</script>
+<script src="../dist/weather-chart-card-ha.js"></script>
+<script>
+  // Isolated synthetic HA: no production server, token, or network API.
+  const card = document.querySelector('weather-chart-card');
+  const hass = {
+    language: 'en', selectedLanguage: 'en',
+    config: { unit_system: { temperature: '°C', length: 'km', wind_speed: 'km/h', pressure: 'hPa' } },
+    states: {
+      'sun.sun': { state: 'above_horizon', attributes: { next_rising: '2026-10-04T06:00:00Z', next_setting: '2026-10-04T18:00:00Z' } },
+      'weather.home': { state: 'sunny', last_changed: '2026-10-03T10:00:00Z', attributes: {
+        temperature: 22, temperature_unit: '°C', humidity: 65, pressure: 1013, pressure_unit: 'hPa',
+        wind_speed: 15, wind_speed_unit: 'km/h', wind_bearing: 180, supported_features: 3
+      } }
+    },
+    connection: { subscribeMessage(callback) {
+      setTimeout(() => callback({ forecast: Array.from({ length: 8 }, (_, i) => ({
+        datetime: new Date(Date.now() + (i + 1) * 86400000).toISOString(),
+        temperature: 23 + i, templow: 15 + i, condition: 'sunny', precipitation: 0,
+        precipitation_probability: 0, wind_speed: 15, wind_bearing: 180
+      })) }), 0);
+      return Promise.resolve(() => {});
+    } }
+  };
+  window.configure = (options = {}) => {
+    card.setConfig({
+      entity: 'weather.home', title: 'Weather', show_main: true, show_time: true,
+      show_day: true, show_date: true, show_forecast_toggle: true,
+      animated_icons: false, forecast: { condition_icons: false }, ...options
+    });
+    card.hass = hass;
+    return card.updateComplete;
+  };
+  window.configure();
+  window.checkStacking = async (options = {}) => {
+    await window.configure(options);
+    card.updateClock();
+    const root = card.shadowRoot;
+    const host = root.querySelector('ha-card');
+    const clock = root.querySelector('.current-time');
+    const bounds = clock.getBoundingClientRect();
+    const cardBounds = host.getBoundingClientRect();
+    const x = bounds.right - 8;
+    const y = bounds.top + Math.min(12, bounds.height / 2);
+    document.body.classList.remove('open', 'backdrop-only');
+    const uncovered = document.elementFromPoint(x, y);
+    const inner = root.elementFromPoint(x, y);
+    document.body.classList.add('backdrop-only');
+    const backdrop = document.elementFromPoint(x, y);
+    document.body.classList.remove('backdrop-only');
+    document.body.classList.add('open');
+    const modal = document.elementFromPoint(x, y);
+    document.body.classList.remove('open');
+    const result = {
+      cardWidth: cardBounds.width, clockWidth: bounds.width,
+      clockInsideCard: bounds.left >= cardBounds.left && bounds.right <= cardBounds.right,
+      uncovered: uncovered?.tagName, inner: inner?.closest('.current-time')?.className,
+      backdrop: backdrop?.id, modal: modal?.id,
+      position: getComputedStyle(host).position, isolation: getComputedStyle(host).isolation,
+      time: root.querySelector('#digital-clock')?.textContent,
+      day: root.querySelector('.date-text.day')?.textContent,
+      date: root.querySelector('.date-text.date')?.textContent,
+      toggle: root.querySelector('.forecast-toggle')?.textContent.trim(),
+      temp: root.querySelector('.current-temp')?.textContent.trim(),
+      iconZ: getComputedStyle(root.querySelector('.main .weather-icon')).zIndex,
+      tempZ: getComputedStyle(root.querySelector('.main .temp-info')).zIndex
+    };
+    result.pass = result.clockInsideCard && result.inner === 'current-time' &&
+      result.backdrop === 'backdrop' && result.modal === 'modal' &&
+      result.position === 'relative' && result.isolation === 'isolate';
+    return result;
+  };
+</script>

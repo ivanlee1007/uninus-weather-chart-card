@@ -19772,6 +19772,8 @@ updateChart({ forecasts, forecastChart } = this) {
     return x`
       <style>
         ha-card {
+          position: relative;
+          isolation: isolate;
           ${config.title ? 'padding-bottom: 8px;' : ''}
         }
         ha-icon {

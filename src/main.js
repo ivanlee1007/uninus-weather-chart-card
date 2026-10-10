@@ -101,11 +101,29 @@ static getStubConfig(hass, unusedEntities, allEntities) {
       forecastChart: {type: Object},
       forecastItems: {type: Number},
       forecasts: { type: Array },
-      alertsExpanded: { type: Boolean }
+      alertsExpanded: { type: Boolean },
+      _weatherUnavailable: { type: Boolean }
     };
   }
 
 setConfig(config) {
+  if (this.config && this.config.entity !== config.entity) {
+    this._lastValidWeather = undefined;
+    this._lastValidTextSensor = undefined;
+    this._weatherUnavailable = true;
+    this.weather = { state: 'unavailable', attributes: {} };
+    for (const key of ['temperature', 'humidity', 'pressure', 'uv_index', 'windSpeed', 'windDirection',
+      'dew_point', 'wind_gust_speed', 'visibility', 'feels_like', 'description',
+      'unitSpeed', 'unitPressure', 'unitVisibility', 'unitTemperature']) {
+      this[key] = undefined;
+    }
+    this.forecasts = [];
+    this._forecastSubscriptionId = (this._forecastSubscriptionId || 0) + 1;
+    if (this.forecastSubscriber) this.forecastSubscriber.then((unsub) => unsub());
+    this.forecastSubscriber = null;
+    if (this.forecastChart) this.forecastChart.destroy();
+    this.forecastChart = null;
+  }
   const cardConfig = {
     title: 'Enhanced Weather Chart Card',
     icons_size: 30,
@@ -191,25 +209,39 @@ set hass(hass) {
   this._hass = hass;
   this.language = this.config.locale || hass.selectedLanguage || hass.language;
   this.sun = 'sun.sun' in hass.states ? hass.states['sun.sun'] : null;
-  this.unitSpeed = this.config.units.speed ? this.config.units.speed : this.weather && this.weather.attributes.wind_speed_unit;
-  this.unitPressure = this.config.units.pressure ? this.config.units.pressure : this.weather && this.weather.attributes.pressure_unit;
-  this.unitVisibility = this.config.units.visibility ? this.config.units.visibility : this.weather && this.weather.attributes.visibility_unit;
-  this.unitTemperature = this.config.units.temperature ? this.config.units.temperature : this.weather && this.weather.attributes.temperature_unit;
-  this.weather = this.config.entity in hass.states
-    ? hass.states[this.config.entity]
-    : null;
+  const incoming = hass.states[this.config.entity];
+  const attributes = incoming && incoming.attributes;
+  const temperature = this.config.temp
+    ? (hass.states[this.config.temp] && hass.states[this.config.temp].state)
+    : attributes && attributes.temperature;
+  this._weatherUnavailable = !attributes || ['unavailable', 'unknown'].includes(incoming.state)
+    || this.getNumericForecastValue({ temperature }, 'temperature') === undefined;
+
+  if (this._weatherUnavailable) {
+    // Keep this instance's last valid readings, units, forecast and timestamp.
+    // Initial unavailable data has no snapshot and must not invent measurements.
+    this.weather = this._lastValidWeather || { state: (incoming && incoming.state) || 'unavailable', attributes: {} };
+    return;
+  }
+
+  this.weather = { ...incoming, attributes: { ...incoming.attributes } };
+  this._lastValidWeather = this.weather;
+  this.unitSpeed = this.config.units.speed ? this.config.units.speed : this.weather.attributes.wind_speed_unit;
+  this.unitPressure = this.config.units.pressure ? this.config.units.pressure : this.weather.attributes.pressure_unit;
+  this.unitVisibility = this.config.units.visibility ? this.config.units.visibility : this.weather.attributes.visibility_unit;
+  this.unitTemperature = this.config.units.temperature ? this.config.units.temperature : this.weather.attributes.temperature_unit;
 
   const firstDefined = (...values) => values.find((v) => typeof v !== 'undefined' && v !== null);
 
   if (this.weather) {
-    this.temperature = this.config.temp ? hass.states[this.config.temp].state : this.weather.attributes.temperature;
-    this.humidity = this.config.humid ? hass.states[this.config.humid].state : this.weather.attributes.humidity;
-    this.pressure = this.config.press ? hass.states[this.config.press].state : firstDefined(this.weather.attributes.pressure, this.weather.attributes.native_pressure);
-    this.uv_index = this.config.uv ? hass.states[this.config.uv].state : this.weather.attributes.uv_index;
-    this.windSpeed = this.config.windspeed ? hass.states[this.config.windspeed].state : this.weather.attributes.wind_speed;
-    this.dew_point = this.config.dew_point ? hass.states[this.config.dew_point].state : this.weather.attributes.dew_point;
-    this.wind_gust_speed = this.config.wind_gust_speed ? hass.states[this.config.wind_gust_speed].state : this.weather.attributes.wind_gust_speed;
-    this.visibility = this.config.visibility ? hass.states[this.config.visibility].state : this.weather.attributes.visibility;
+    this.temperature = this.config.temp ? (hass.states[this.config.temp] && hass.states[this.config.temp].state) : this.weather.attributes.temperature;
+    this.humidity = this.config.humid ? (hass.states[this.config.humid] && hass.states[this.config.humid].state) : this.weather.attributes.humidity;
+    this.pressure = this.config.press ? (hass.states[this.config.press] && hass.states[this.config.press].state) : firstDefined(this.weather.attributes.pressure, this.weather.attributes.native_pressure);
+    this.uv_index = this.config.uv ? (hass.states[this.config.uv] && hass.states[this.config.uv].state) : this.weather.attributes.uv_index;
+    this.windSpeed = this.config.windspeed ? (hass.states[this.config.windspeed] && hass.states[this.config.windspeed].state) : this.weather.attributes.wind_speed;
+    this.dew_point = this.config.dew_point ? (hass.states[this.config.dew_point] && hass.states[this.config.dew_point].state) : this.weather.attributes.dew_point;
+    this.wind_gust_speed = this.config.wind_gust_speed ? (hass.states[this.config.wind_gust_speed] && hass.states[this.config.wind_gust_speed].state) : this.weather.attributes.wind_gust_speed;
+    this.visibility = this.config.visibility ? (hass.states[this.config.visibility] && hass.states[this.config.visibility].state) : this.weather.attributes.visibility;
 
     if (this.config.winddir && hass.states[this.config.winddir] && hass.states[this.config.winddir].state !== undefined) {
       this.windDirection = parseFloat(hass.states[this.config.winddir].state);
@@ -219,6 +251,14 @@ set hass(hass) {
 
     this.feels_like = this.config.feels_like && hass.states[this.config.feels_like] ? hass.states[this.config.feels_like].state : firstDefined(this.weather.attributes.apparent_temperature, this.weather.attributes.native_apparent_temperature);
     this.description = this.config.description && hass.states[this.config.description] ? hass.states[this.config.description].state : this.weather.attributes.description;
+    for (const key of ['temperature', 'humidity', 'pressure', 'uv_index', 'windSpeed',
+      'dew_point', 'wind_gust_speed', 'visibility', 'feels_like']) {
+      this[key] = this.getNumericForecastValue({ value: this[key] }, 'value');
+    }
+    if (!Number.isFinite(this.windDirection) &&
+      !(typeof this.windDirection === 'string' && /^(N|NNE|NE|ENE|E|ESE|SE|SSE|S|SSW|SW|WSW|W|WNW|NW|NNW)$/.test(this.windDirection))) {
+      this.windDirection = undefined;
+    }
   }
 
   if (this.weather && !this.forecastSubscriber) {
@@ -236,8 +276,10 @@ subscribeForecastEvents() {
     return;
   }
 
+  const subscriptionId = this._forecastSubscriptionId = (this._forecastSubscriptionId || 0) + 1;
   const callback = (event) => {
-    this.forecasts = event.forecast;
+    if (this._weatherUnavailable || subscriptionId !== this._forecastSubscriptionId || !Array.isArray(event.forecast)) return;
+    this.forecasts = event.forecast.map((entry) => ({ ...entry }));
     this.requestUpdate();
     this.drawChart();
   };
@@ -553,6 +595,7 @@ getLocalizedMonthNameShort(date, timezone) {
   }
 
   getWeatherIcon(condition, sun) {
+    if (!Object.prototype.hasOwnProperty.call(weatherIcons, condition)) return 'mdi:help-circle-outline';
     if (this.config.animated_icons === true) {
       const iconName = sun === 'below_horizon' ? weatherIconsNight[condition] : weatherIconsDay[condition];
       return `${this.baseIconPath}${iconName}.svg`;
@@ -583,6 +626,8 @@ getLocalizedMonthNameShort(date, timezone) {
    */
   handleIconError(event, condition, sun) {
     const img = event.target;
+    // An asynchronous image error may arrive after Lit removed/replaced it.
+    if (!img || !img.parentNode) return;
     const currentSrc = img.src;
     
     // If already tried local bundled icons, try custom path if configured
@@ -828,7 +873,7 @@ createTemperatureGradient(data, unit, ctx, chartArea) {
   const dataLength = data.length;
   
   for (let i = 0; i < dataLength; i++) {
-    const position = i / (dataLength - 1);
+    const position = dataLength > 1 ? i / (dataLength - 1) : 0;
     const color = this.getTemperatureColor(data[i], unit);
     gradient.addColorStop(position, color);
   }
@@ -856,6 +901,7 @@ drawChart({ config, language, weather, forecastItems } = this) {
   var lengthUnit = this._hass.config.unit_system.length;
   const data = this.computeForecastData();
   const precipitationType = data.effectivePrecipitationType;
+  const finiteTemperatures = [...data.tempHigh, ...data.tempLow].filter(Number.isFinite);
   if (precipitationType === 'probability') {
     var precipUnit = '%';
   } else {
@@ -946,7 +992,7 @@ drawChart({ config, language, weather, forecastItems } = this) {
       datalabels: {
         display: function (context) {
           const rainfall = context.dataset.data[context.dataIndex];
-          const probability = data.forecast[context.dataIndex].precipitation_probability;
+          const probability = self.getNumericForecastValue(data.forecast[context.dataIndex], 'precipitation_probability');
           if (rainfall > 0) {
             return 'true';
           }
@@ -957,8 +1003,9 @@ drawChart({ config, language, weather, forecastItems } = this) {
         },
       formatter: function (value, context) {
         const rainfall = context.dataset.data[context.dataIndex];
-        const probability = data.forecast[context.dataIndex].precipitation_probability;
+        const probability = self.getNumericForecastValue(data.forecast[context.dataIndex], 'precipitation_probability');
 
+        if (!Number.isFinite(rainfall)) return '';
         let formattedValue;
         if (precipitationType === 'rainfall') {
           if (probability !== undefined && probability !== null && config.forecast.show_probability) {
@@ -988,10 +1035,11 @@ drawChart({ config, language, weather, forecastItems } = this) {
   if (config.forecast.style === 'style2') {
     datasets[0].datalabels = {
       display: function (context) {
-        return 'true';
+        return Number.isFinite(context.dataset.data[context.dataIndex]);
       },
       formatter: function (value, context) {
-        return context.dataset.data[context.dataIndex] + '°';
+        const temperature = context.dataset.data[context.dataIndex];
+        return Number.isFinite(temperature) ? temperature + '°' : '';
       },
       align: 'top',
       anchor: 'center',
@@ -1008,10 +1056,11 @@ drawChart({ config, language, weather, forecastItems } = this) {
 
     datasets[1].datalabels = {
       display: function (context) {
-        return 'true';
+        return Number.isFinite(context.dataset.data[context.dataIndex]);
       },
       formatter: function (value, context) {
-        return context.dataset.data[context.dataIndex] + '°';
+        const temperature = context.dataset.data[context.dataIndex];
+        return Number.isFinite(temperature) ? temperature + '°' : '';
       },
       align: 'bottom',
       anchor: 'center',
@@ -1101,8 +1150,8 @@ drawChart({ config, language, weather, forecastItems } = this) {
         TempAxis: {
           position: 'left',
           beginAtZero: false,
-          suggestedMin: Math.min(...data.tempHigh, ...data.tempLow) - 5,
-          suggestedMax: Math.max(...data.tempHigh, ...data.tempLow) + 3,
+          suggestedMin: finiteTemperatures.length ? Math.min(...finiteTemperatures) - 5 : undefined,
+          suggestedMax: finiteTemperatures.length ? Math.max(...finiteTemperatures) + 3 : undefined,
           grid: {
             display: false,
             drawTicks: false,
@@ -1143,7 +1192,8 @@ drawChart({ config, language, weather, forecastItems } = this) {
             lineHeight: 0.7,
           },
           formatter: function (value, context) {
-            return context.dataset.data[context.dataIndex] + '°';
+            const temperature = context.dataset.data[context.dataIndex];
+        return Number.isFinite(temperature) ? temperature + '°' : '';
           },
         },
         tooltip: {
@@ -1172,7 +1222,7 @@ drawChart({ config, language, weather, forecastItems } = this) {
     label: function (context) {
       var label = context.dataset.label;
       var value = context.formattedValue;
-      var probability = data.forecast[context.dataIndex].precipitation_probability;
+      var probability = self.getNumericForecastValue(data.forecast[context.dataIndex], 'precipitation_probability');
       var unit = context.datasetIndex === 2 ? precipUnit : tempUnit;
 
       if (precipitationType === 'rainfall' && context.datasetIndex === 2 && config.forecast.show_probability && probability !== undefined && probability !== null) {
@@ -1204,7 +1254,8 @@ getForecastValue(entry, ...keys) {
 
 getNumericForecastValue(entry, ...keys) {
   const value = this.getForecastValue(entry, ...keys);
-  if (typeof value === 'undefined' || value === null || value === '') {
+  if ((typeof value !== 'number' && typeof value !== 'string') ||
+    (typeof value === 'string' && value.trim() === '')) {
     return undefined;
   }
   const number = Number(value);
@@ -1393,10 +1444,8 @@ computeForecastData({ config, forecastItems } = this) {
       lowTemp = roundTemp ? Math.round(lowTemp) : Math.round(lowTemp * 10) / 10;
     }
 
-    tempHigh.push(highTemp);
-    if (typeof lowTemp !== 'undefined') {
-      tempLow.push(lowTemp);
-    }
+    tempHigh.push(Number.isFinite(highTemp) ? highTemp : undefined);
+    tempLow.push(Number.isFinite(lowTemp) ? lowTemp : undefined);
 
     const precipitationValue = this.getNumericForecastValue(d, 'precipitation', 'native_precipitation');
     const probabilityValue = this.getNumericForecastValue(d, 'precipitation_probability');
@@ -1408,9 +1457,9 @@ computeForecastData({ config, forecastItems } = this) {
     }
 
     if (config.forecast.precipitation_type === 'probability') {
-      precip.push(probabilityValue || 0);
+      precip.push(probabilityValue);
     } else {
-      precip.push((precipitationValue !== undefined ? precipitationValue : 0));
+      precip.push(precipitationValue);
     }
   }
 
@@ -1419,7 +1468,7 @@ computeForecastData({ config, forecastItems } = this) {
     : (hasRainfall ? 'rainfall' : (hasProbability ? 'probability' : 'rainfall'));
 
   if (effectivePrecipitationType === 'probability' && config.forecast.precipitation_type !== 'probability') {
-    precip = forecast.map((entry) => this.getNumericForecastValue(entry, 'precipitation_probability') || 0);
+    precip = forecast.map((entry) => this.getNumericForecastValue(entry, 'precipitation_probability'));
   }
 
   return {
@@ -1723,6 +1772,17 @@ updateChart({ forecasts, forecastChart } = this) {
           white-space: pre-wrap;
           color: var(--secondary-text-color);
         }
+        .weather-data-footer {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: baseline;
+          gap: 4px 12px;
+          font-size: 13px;
+        }
+        .weather-data-status {
+          color: var(--warning-color, #f9a825);
+          overflow-wrap: anywhere;
+        }
         .updated {
           font-size: 13px;
           align-items: right;
@@ -1750,6 +1810,7 @@ updateChart({ forecasts, forecastChart } = this) {
       <ha-card header="${config.title}">
         <div class="card">
           ${this.renderAlertBanner()}
+
           ${this.renderClock()}
           ${this.renderMain()}
           ${this.renderAttributes()}
@@ -1759,7 +1820,10 @@ updateChart({ forecasts, forecastChart } = this) {
           ${this.renderForecastConditionIcons()}
           ${this.renderWind()}
           ${this.renderTextSensor()}
-          ${this.renderLastUpdated()}
+          <div class="weather-data-footer">
+            ${this.renderLastUpdated()}
+            ${this._weatherUnavailable ? html`<span class="weather-data-status" role="status">資料暫時不可用</span>` : ''}
+          </div>
         </div>
       </ha-card>
     `;
@@ -1770,7 +1834,15 @@ getTextSensorState() {
     return null;
   }
 
-  return this._hass.states[this.config.text_sensor_entity] || null;
+  const entity = this.config.text_sensor_entity;
+  if (this._weatherUnavailable) {
+    return this._lastValidTextSensor && this._lastValidTextSensor.entity === entity ? this._lastValidTextSensor.value : null;
+  }
+  const value = this._hass.states[entity];
+  if (value && value.state && !['unknown', 'unavailable', 'None', 'null'].includes(value.state)) {
+    this._lastValidTextSensor = { entity, value: { ...value, attributes: { ...value.attributes } } };
+  }
+  return value || null;
 }
 
 
@@ -1950,25 +2022,27 @@ renderMain({ config, sun, weather, temperature, feels_like, description } = this
     roundedFeelsLike = Math.round(roundedFeelsLike * 10) / 10;
   }
 
-  const iconHtml = config.animated_icons || config.icons
-    ? html`<img src="${this.getWeatherIcon(weather.state, sun.state)}" 
-                 @error="${(e) => this.handleIconError(e, weather.state, sun.state)}" 
+  const iconHtml = (config.animated_icons || config.icons) && Object.prototype.hasOwnProperty.call(weatherIcons, weather.state)
+    ? html`<img src="${this.getWeatherIcon(weather.state, sun && sun.state)}"
+                 @error="${(e) => this.handleIconError(e, weather.state, sun && sun.state)}"
                  alt="">`
-    : html`<ha-icon icon="${this.getWeatherIcon(weather.state, sun.state)}"></ha-icon>`;
+    : html`<ha-icon icon="${this.getWeatherIcon(weather.state, sun && sun.state)}"></ha-icon>`;
 
   return html`
     <div class="main">
       <!-- Left: Temperature and condition info -->
       <div class="temp-info">
         <div class="current-temp">
-          ${showTemperature ? html`${roundedTemperature}<span>${this.unitTemperature || this.getUnit('temperature')}</span>` : ''}
+          ${showTemperature ? (Number.isFinite(roundedTemperature)
+            ? html`${roundedTemperature}<span>${this.unitTemperature || this.getUnit('temperature')}</span>`
+            : html`—`) : ''}
         </div>
         ${showCurrentCondition ? html`
           <div class="current-condition">
-            ${this.ll(weather.state)}
+            ${this.ll(weather.state) || (weather.state === 'unavailable' ? 'Unavailable' : 'Unknown')}
           </div>
         ` : ''}
-        ${showFeelsLike && roundedFeelsLike ? html`
+        ${showFeelsLike && Number.isFinite(roundedFeelsLike) ? html`
           <div class="feels-like">
             ${this.ll('feelsLike')}
             ${roundedFeelsLike}${this.unitTemperature || this.getUnit('temperature')}
@@ -2073,7 +2147,7 @@ renderAttributes({ config, humidity, pressure, windSpeed, windDirection, sun, la
   let dWindSpeed = windSpeed;
   let dPressure = pressure;
 
-  if (this.unitSpeed !== this.weather.attributes.wind_speed_unit) {
+  if (Number.isFinite(windSpeed) && this.unitSpeed !== this.weather.attributes.wind_speed_unit) {
     if (this.unitSpeed === 'm/s') {
       if (this.weather.attributes.wind_speed_unit === 'km/h') {
         dWindSpeed = Math.round(windSpeed * 1000 / 3600);
@@ -2099,7 +2173,7 @@ renderAttributes({ config, humidity, pressure, windSpeed, windDirection, sun, la
     dWindSpeed = Math.round(dWindSpeed);
   }
 
-  if (this.unitPressure !== this.weather.attributes.pressure_unit) {
+  if (Number.isFinite(pressure) && this.unitPressure !== this.weather.attributes.pressure_unit) {
     if (this.unitPressure === 'mmHg') {
       if (this.weather.attributes.pressure_unit === 'hPa') {
         dPressure = Math.round(pressure * 0.75006);
@@ -2140,12 +2214,12 @@ renderAttributes({ config, humidity, pressure, windSpeed, windDirection, sun, la
 
 return html`
     <div class="attributes">
-      ${((showHumidity && humidity !== undefined) || (showPressure && dPressure !== undefined) || (showDewpoint && dew_point !== undefined) || (showVisibility && visibility !== undefined)) ? html`
+      ${((showHumidity && humidity !== undefined) || (showPressure && Number.isFinite(Number(dPressure))) || (showDewpoint && dew_point !== undefined) || (showVisibility && visibility !== undefined)) ? html`
         <div>
           ${showHumidity && humidity !== undefined ? html`
             <ha-icon icon="hass:water-percent"></ha-icon> ${humidity} %<br>
           ` : ''}
-          ${showPressure && dPressure !== undefined ? html`
+          ${showPressure && Number.isFinite(Number(dPressure)) ? html`
             <ha-icon icon="hass:gauge"></ha-icon> ${dPressure} ${this.ll('units')[this.unitPressure]} <br>
           ` : ''}
           ${showDewpoint && dew_point !== undefined ? html`
@@ -2170,12 +2244,12 @@ return html`
           ` : ''}
         </div>
       ` : ''}
-      ${((showWindDirection && windDirection !== undefined) || (showWindSpeed && dWindSpeed !== undefined)) ? html`
+      ${((showWindDirection && windDirection !== undefined) || (showWindSpeed && Number.isFinite(dWindSpeed))) ? html`
         <div>
           ${showWindDirection && windDirection !== undefined ? html`
             <ha-icon icon="hass:${this.getWindDirIcon(windDirection)}"></ha-icon> ${this.getWindDir(windDirection)} <br>
           ` : ''}
-          ${showWindSpeed && dWindSpeed !== undefined ? html`
+          ${showWindSpeed && Number.isFinite(dWindSpeed) ? html`
             <ha-icon icon="hass:weather-windy"></ha-icon>
             ${dWindSpeed} ${this.ll('units')[this.unitSpeed]} <br>
           ` : ''}
@@ -2224,8 +2298,8 @@ renderForecastConditionIcons({ config, forecastItems, sun } = this) {
     <div class="conditions" @click="${(e) => this.showMoreInfo(config.entity)}">
       ${forecast.map((item) => {
         const forecastTime = new Date(item.datetime);
-        const sunriseTime = new Date(sun.attributes.next_rising);
-        const sunsetTime = new Date(sun.attributes.next_setting);
+        const sunriseTime = new Date(sun && sun.attributes && sun.attributes.next_rising);
+        const sunsetTime = new Date(sun && sun.attributes && sun.attributes.next_setting);
 
         // Adjust sunrise and sunset times to match the date of forecastTime
         const adjustedSunriseTime = new Date(forecastTime);
@@ -2253,7 +2327,9 @@ renderForecastConditionIcons({ config, forecastItems, sun } = this) {
 
         let iconHtml;
 
-        if (config.animated_icons || config.icons) {
+        if (!Object.prototype.hasOwnProperty.call(weatherIcons, condition)) {
+          iconHtml = html`<ha-icon icon="mdi:help-circle-outline"></ha-icon>`;
+        } else if (config.animated_icons || config.icons) {
           const iconSrc = config.animated_icons ?
             `${this.baseIconPath}${weatherIcons[condition]}.svg` :
             `${this.config.icons}${weatherIcons[condition]}.svg`;
@@ -2263,7 +2339,7 @@ renderForecastConditionIcons({ config, forecastItems, sun } = this) {
                                @error="${(e) => this.handleIconError(e, condition, sunState)}" 
                                alt="">`;
         } else {
-          iconHtml = html`<ha-icon icon="${this.getWeatherIcon(condition, sun.state)}"></ha-icon>`;
+          iconHtml = html`<ha-icon icon="${this.getWeatherIcon(condition, sun && sun.state)}"></ha-icon>`;
         }
 
         return html`
@@ -2289,29 +2365,30 @@ renderWind({ config, weather, windSpeed, windDirection, forecastItems } = this) 
     <div class="wind-details">
       ${showWindForecast ? html`
         ${forecast.map((item) => {
-          let dWindSpeed = item.wind_speed;
+          const windSpeed = this.getNumericForecastValue(item, 'wind_speed');
+          let dWindSpeed = windSpeed;
 
-          if (this.unitSpeed !== this.weather.attributes.wind_speed_unit) {
+          if (Number.isFinite(windSpeed) && this.unitSpeed !== this.weather.attributes.wind_speed_unit) {
             if (this.unitSpeed === 'm/s') {
               if (this.weather.attributes.wind_speed_unit === 'km/h') {
-                dWindSpeed = Math.round(item.wind_speed * 1000 / 3600);
+                dWindSpeed = Math.round(windSpeed * 1000 / 3600);
               } else if (this.weather.attributes.wind_speed_unit === 'mph') {
-                dWindSpeed = Math.round(item.wind_speed * 0.44704);
+                dWindSpeed = Math.round(windSpeed * 0.44704);
               }
             } else if (this.unitSpeed === 'km/h') {
               if (this.weather.attributes.wind_speed_unit === 'm/s') {
-                dWindSpeed = Math.round(item.wind_speed * 3.6);
+                dWindSpeed = Math.round(windSpeed * 3.6);
               } else if (this.weather.attributes.wind_speed_unit === 'mph') {
-                dWindSpeed = Math.round(item.wind_speed * 1.60934);
+                dWindSpeed = Math.round(windSpeed * 1.60934);
               }
             } else if (this.unitSpeed === 'mph') {
               if (this.weather.attributes.wind_speed_unit === 'm/s') {
-                dWindSpeed = Math.round(item.wind_speed / 0.44704);
+                dWindSpeed = Math.round(windSpeed / 0.44704);
               } else if (this.weather.attributes.wind_speed_unit === 'km/h') {
-                dWindSpeed = Math.round(item.wind_speed / 1.60934);
+                dWindSpeed = Math.round(windSpeed / 1.60934);
               }
             } else if (this.unitSpeed === 'Bft') {
-              dWindSpeed = this.calculateBeaufortScale(item.wind_speed);
+              dWindSpeed = this.calculateBeaufortScale(windSpeed);
             }
           } else {
             dWindSpeed = Math.round(dWindSpeed);
@@ -2320,7 +2397,7 @@ renderWind({ config, weather, windSpeed, windDirection, forecastItems } = this) 
           return html`
             <div class="wind-detail">
               <ha-icon class="wind-icon" icon="hass:${this.getWindDirIcon(item.wind_bearing)}"></ha-icon>
-              <span class="wind-speed">${dWindSpeed}</span>
+              <span class="wind-speed">${Number.isFinite(dWindSpeed) ? dWindSpeed : '—'}</span>
               <span class="wind-unit">${this.ll('units')[this.unitSpeed]}</span>
             </div>
           `;
@@ -2331,8 +2408,10 @@ renderWind({ config, weather, windSpeed, windDirection, forecastItems } = this) 
 }
 
 renderLastUpdated() {
+  if (this.config.show_last_changed !== true || !(this.weather && this.weather.last_changed)) return html``;
   const lastUpdatedString = this.weather.last_changed;
   const lastUpdatedTimestamp = new Date(lastUpdatedString).getTime();
+  if (!Number.isFinite(lastUpdatedTimestamp)) return html``;
   const currentTimestamp = Date.now();
   const timeDifference = currentTimestamp - lastUpdatedTimestamp;
 

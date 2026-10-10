@@ -11,7 +11,7 @@
   body.open #backdrop, body.open #modal { display: block; }
   body.backdrop-only #backdrop { display: block; }
 </style>
-<div id="dashboard"><weather-chart-card></weather-chart-card></div>
+<div id="dashboard"></div>
 <div id="backdrop"></div><div id="modal">Synthetic HA dialog</div>
 <script>
   // Minimal synthetic ha-card with a Shadow DOM header and slotted real card content.
@@ -29,7 +29,7 @@
 <script src="../dist/weather-chart-card-ha.js"></script>
 <script>
   // Isolated synthetic HA: no production server, token, or network API.
-  const card = document.querySelector('weather-chart-card');
+  const card = document.createElement('weather-chart-card');
   const hass = {
     language: 'en', selectedLanguage: 'en',
     config: { unit_system: { temperature: '°C', length: 'km', wind_speed: 'km/h', pressure: 'hPa' } },
@@ -49,7 +49,7 @@
       return Promise.resolve(() => {});
     } }
   };
-  window.configure = (options = {}) => {
+  window.configureClockFixture = (options = {}) => {
     card.setConfig({
       entity: 'weather.home', title: 'Weather', show_main: true, show_time: true,
       show_day: true, show_date: true, show_forecast_toggle: true,
@@ -58,9 +58,10 @@
     card.hass = hass;
     return card.updateComplete;
   };
-  window.configure();
+  window.configureClockFixture();
+  document.querySelector('#dashboard').append(card);
   window.checkStacking = async (options = {}) => {
-    await window.configure(options);
+    await window.configureClockFixture(options);
     card.updateClock();
     const root = card.shadowRoot;
     const host = root.querySelector('ha-card');

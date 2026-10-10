@@ -1,6 +1,6 @@
 import resolve from 'rollup-plugin-node-resolve';
 import serve from 'rollup-plugin-serve';
-import copy from 'rollup-plugin-copy';
+import copyIcons from './copy-icons.mjs';
 
 export default {
   input: 'src/main.js',
@@ -11,12 +11,7 @@ export default {
   },
   plugins: [
     resolve(),
-    copy({
-      targets: [
-        { src: 'src/icons/*', dest: 'dist/icons' },
-        { src: 'src/icons2/*', dest: 'dist/icons2' }
-      ]
-    }),
+    copyIcons(),
     serve({
       contentBase: ['dist', '.'],
       host: '0.0.0.0',

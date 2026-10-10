@@ -32,12 +32,15 @@
   },
   "devDependencies": {
     "eslint": "^8.56.0",
+    "jsdom": "^30.1.2",
+    "playwright": "^1.64.0",
     "rollup": "^4.9.6",
-    "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-serve": "^2.0.3"
   },
   "scripts": {
+    "pretest": "npm run build",
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test tests/*.test.mjs",
     "start": "rollup -c rollup.config.dev.js --watch",
     "build": "npm run lint && npm run rollup",
     "lint": "eslint src --ext .js",

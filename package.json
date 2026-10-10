@@ -1,6 +1,6 @@
 {
   "name": "weather-chart-card",
-  "version": "1.6.6",
+  "version": "1.6.7",
   "description": "UNiNUS Weather Chart Card with Home Assistant-native editor selectors and enhanced weather visualization",
   "keywords": [
     "home-assistant",

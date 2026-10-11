@@ -1,3 +1,4 @@
+/* weather-chart-card v1.6.8 */
 'use strict';
 
 const zhTW = {
@@ -894,6 +895,62 @@ const locale = {
     'windy-variant': '강풍'
   },
 };
+
+// Versioned, bounded last-valid weather data; browser storage is best effort.
+const PREFIX = 'weather-chart-card:snapshot:v1:';
+const MAX_BYTES = 65536;
+const WEATHER_FIELDS = ['temperature', 'temperature_unit', 'humidity', 'pressure', 'native_pressure', 'pressure_unit', 'uv_index', 'wind_speed', 'wind_speed_unit', 'wind_bearing', 'apparent_temperature', 'native_apparent_temperature', 'dew_point', 'wind_gust_speed', 'visibility', 'visibility_unit', 'description', 'supported_features'];
+const READINGS = ['temperature', 'humidity', 'pressure', 'uv_index', 'windSpeed', 'windDirection', 'dew_point', 'wind_gust_speed', 'visibility', 'feels_like', 'description'];
+const FORECAST_FIELDS = ['datetime', 'condition', 'temperature', 'native_temperature', 'templow', 'native_temp_low', 'native_templow', 'precipitation', 'native_precipitation', 'precipitation_probability', 'wind_speed', 'wind_bearing'];
+const validText = (value, limit = 256) => typeof value === 'string' && value.trim() !== '' && !['unknown', 'unavailable', 'none', 'null', 'nan'].includes(value.trim().toLowerCase()) && value.length <= limit;
+const validNumber = (value) => typeof value === 'number' && Number.isFinite(value);
+const scalar = (value) => validNumber(value) || validText(value);
+const pick = (source, fields) => Object.fromEntries(fields.filter((field) => scalar(source?.[field])).map((field) => [field, source[field]]));
+const validDate = (date) => validText(date) && Number.isFinite(Date.parse(date));
+const FORECAST_NUMBERS = ['temperature', 'native_temperature', 'templow', 'native_temp_low', 'native_templow', 'precipitation', 'native_precipitation', 'precipitation_probability', 'wind_speed'];
+
+function normalizeForecast(entries) {
+  if (!Array.isArray(entries)) return [];
+  return entries.filter((entry) => entry && validDate(entry.datetime)).map((entry) => {
+    const clean = pick(entry, FORECAST_FIELDS);
+    for (const field of FORECAST_NUMBERS) {
+      if (typeof clean[field] !== 'undefined') {
+        const value = typeof clean[field] === 'string' && clean[field].trim() ? Number(clean[field]) : clean[field];
+        if (validNumber(value)) clean[field] = value;
+        else delete clean[field];
+      }
+    }
+    return clean;
+  }).filter((entry) => ['temperature', 'native_temperature', 'templow', 'native_temp_low', 'native_templow'].some((field) => validNumber(entry[field]))).slice(0, 48);
+}
+
+function snapshotKey(config, hass) {
+  const site = [hass?.config?.uuid || '', hass?.config?.location_name || '', hass?.config?.latitude ?? '', hass?.config?.longitude ?? ''];
+  return PREFIX + JSON.stringify([site, config.entity, config.forecast?.type || 'daily', config.text_sensor_entity || '']);
+}
+
+function readSnapshot(key) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw || raw.length > MAX_BYTES) return null;
+    const value = JSON.parse(raw);
+    if (value.version !== 1 || value.key !== key) return null;
+    const weather = value.weather && validText(value.weather.state) && validNumber(value.weather.attributes?.temperature) && validDate(value.weather.last_changed) ? { state: value.weather.state, last_changed: value.weather.last_changed, attributes: pick(value.weather.attributes, WEATHER_FIELDS) } : null;
+    const forecast = Array.isArray(value.forecast) && value.forecast.length <= 48 ? normalizeForecast(value.forecast) : [];
+    const text = value.text && validText(value.text.state, 2048) && validDate(value.text.last_changed) ? { state: value.text.state, last_changed: value.text.last_changed, attributes: { friendly_name: validText(value.text.attributes?.friendly_name) ? value.text.attributes.friendly_name : '' } } : null;
+    return weather || forecast.length || text ? { weather, readings: weather ? pick(value.readings, READINGS) : {}, forecast, forecastReceivedAt: forecast.length && validDate(value.forecastReceivedAt) ? value.forecastReceivedAt : null, text } : null;
+  } catch { return null; }
+}
+
+function writeSnapshot(key, snapshot) {
+  try {
+    const weather = snapshot.weather && validText(snapshot.weather.state) && validNumber(snapshot.weather.attributes?.temperature) && validDate(snapshot.weather.last_changed) ? { state: snapshot.weather.state, last_changed: snapshot.weather.last_changed, attributes: pick(snapshot.weather.attributes, WEATHER_FIELDS) } : null;
+    const forecast = normalizeForecast(snapshot.forecast);
+    const text = snapshot.text && validText(snapshot.text.state, 2048) && validDate(snapshot.text.last_changed) ? { state: snapshot.text.state, last_changed: snapshot.text.last_changed, attributes: { friendly_name: validText(snapshot.text.attributes?.friendly_name) ? snapshot.text.attributes.friendly_name : '' } } : null;
+    const raw = JSON.stringify({ version: 1, key, weather, readings: pick(snapshot.readings, READINGS), forecast, forecastReceivedAt: forecast.length && validDate(snapshot.forecastReceivedAt) ? snapshot.forecastReceivedAt : null, text });
+    if (raw.length <= MAX_BYTES) window.localStorage.setItem(key, raw);
+  } catch { /* storage disabled, quota exceeded, or serialization failure: keep instance data */ }
+}
 
 /**
  * Weather card constants
@@ -18407,22 +18464,11 @@ static getStubConfig(hass, unusedEntities, allEntities) {
   }
 
 setConfig(config) {
-  if (this.config && this.config.entity !== config.entity) {
-    this._lastValidWeather = undefined;
-    this._lastValidTextSensor = undefined;
-    this._weatherUnavailable = true;
-    this.weather = { state: 'unavailable', attributes: {} };
-    for (const key of ['temperature', 'humidity', 'pressure', 'uv_index', 'windSpeed', 'windDirection',
-      'dew_point', 'wind_gust_speed', 'visibility', 'feels_like', 'description',
-      'unitSpeed', 'unitPressure', 'unitVisibility', 'unitTemperature']) {
-      this[key] = undefined;
-    }
-    this.forecasts = [];
-    this._forecastSubscriptionId = (this._forecastSubscriptionId || 0) + 1;
-    if (this.forecastSubscriber) this.forecastSubscriber.then((unsub) => unsub());
-    this.forecastSubscriber = null;
-    if (this.forecastChart) this.forecastChart.destroy();
-    this.forecastChart = null;
+  if (this.config && (this.config.entity !== config.entity ||
+    this.config.forecast.type !== (config.forecast?.type || 'daily') ||
+    this.config.text_sensor_entity !== (config.text_sensor_entity || ''))) {
+    this.resetSnapshotState();
+    this._snapshotKey = undefined;
   }
   const cardConfig = {
     title: 'Enhanced Weather Chart Card',
@@ -18505,8 +18551,39 @@ setConfig(config) {
   }
 }
 
+resetSnapshotState() {
+  this._lastValidWeather = undefined;
+  this._lastValidTextSensor = undefined;
+  this._savedReadings = undefined;
+  this._weatherUnavailable = true;
+  this.weather = { state: 'unavailable', attributes: {} };
+  for (const key of ['temperature', 'humidity', 'pressure', 'uv_index', 'windSpeed', 'windDirection',
+    'dew_point', 'wind_gust_speed', 'visibility', 'feels_like', 'description',
+    'unitSpeed', 'unitPressure', 'unitVisibility', 'unitTemperature']) {
+    this[key] = undefined;
+  }
+  this.forecasts = [];
+  this._forecastReceivedAt = null;
+  this._forecastSubscriptionId = (this._forecastSubscriptionId || 0) + 1;
+  if (this.forecastSubscriber) this.forecastSubscriber.then((unsub) => unsub());
+  this.forecastSubscriber = null;
+  if (this.forecastChart) this.forecastChart.destroy();
+  this.forecastChart = null;
+}
+
 set hass(hass) {
   this._hass = hass;
+  const key = snapshotKey(this.config, hass);
+  if (this._snapshotKey !== key) {
+    if (this._snapshotKey !== undefined) this.resetSnapshotState();
+    this._snapshotKey = key;
+    const saved = readSnapshot(key);
+    this._lastValidWeather = saved?.weather;
+    this._lastValidTextSensor = saved?.text ? { entity: this.config.text_sensor_entity, value: saved.text } : undefined;
+    this.forecasts = saved?.forecast || [];
+    this._forecastReceivedAt = saved?.forecastReceivedAt || null;
+    this._savedReadings = saved?.readings;
+  }
   this.language = this.config.locale || hass.selectedLanguage || hass.language;
   this.sun = 'sun.sun' in hass.states ? hass.states['sun.sun'] : null;
   const incoming = hass.states[this.config.entity];
@@ -18514,13 +18591,22 @@ set hass(hass) {
   const temperature = this.config.temp
     ? (hass.states[this.config.temp] && hass.states[this.config.temp].state)
     : attributes && attributes.temperature;
-  this._weatherUnavailable = !attributes || ['unavailable', 'unknown'].includes(incoming.state)
+  this._weatherUnavailable = !attributes || !incoming || typeof incoming.state !== 'string' || !incoming.state.trim() || ['unavailable', 'unknown', 'none', 'null', 'nan'].includes(incoming.state.trim().toLowerCase())
     || this.getNumericForecastValue({ temperature }, 'temperature') === undefined;
 
   if (this._weatherUnavailable) {
     // Keep this instance's last valid readings, units, forecast and timestamp.
     // Initial unavailable data has no snapshot and must not invent measurements.
     this.weather = this._lastValidWeather || { state: (incoming && incoming.state) || 'unavailable', attributes: {} };
+    if (this.config.show_text_sensor) this.getTextSensorState();
+    if (this._lastValidWeather && this._savedReadings) {
+      Object.assign(this, this._savedReadings);
+      this.unitSpeed = this.config.units.speed || this.weather.attributes.wind_speed_unit;
+      this.unitPressure = this.config.units.pressure || this.weather.attributes.pressure_unit;
+      this.unitVisibility = this.config.units.visibility || this.weather.attributes.visibility_unit;
+      this.unitTemperature = this.config.units.temperature || this.weather.attributes.temperature_unit;
+    }
+    if (!this.forecastSubscriber) this.subscribeForecastEvents();
     return;
   }
 
@@ -18564,6 +18650,17 @@ set hass(hass) {
   if (this.weather && !this.forecastSubscriber) {
     this.subscribeForecastEvents();
   }
+  this.saveWeatherSnapshot();
+}
+
+saveWeatherSnapshot() {
+  const readings = this._weatherUnavailable && this._savedReadings ? this._savedReadings : Object.fromEntries(['temperature', 'humidity', 'pressure', 'uv_index', 'windSpeed', 'windDirection', 'dew_point', 'wind_gust_speed', 'visibility', 'feels_like', 'description'].map((name) => [name, this[name]]));
+  this._savedReadings = readings;
+  const weather = this._lastValidWeather && {
+    ...this._lastValidWeather,
+    attributes: { ...this._lastValidWeather.attributes, temperature: this.getNumericForecastValue({ temperature: readings.temperature }, 'temperature') }
+  };
+  writeSnapshot(this._snapshotKey, { weather, readings, forecast: this.forecasts, forecastReceivedAt: this._forecastReceivedAt, text: this._lastValidTextSensor?.value });
 }
 
 subscribeForecastEvents() {
@@ -18571,15 +18668,19 @@ subscribeForecastEvents() {
   const isHourly = forecastType === 'hourly';
 
   const feature = isHourly ? WeatherEntityFeature.FORECAST_HOURLY : WeatherEntityFeature.FORECAST_DAILY;
-  if (!this.supportsFeature(feature)) {
+  if (!this._weatherUnavailable && !this.supportsFeature(feature)) {
     console.error(`Weather entity "${this.config.entity}" does not support ${isHourly ? 'hourly' : 'daily'} forecasts.`);
     return;
   }
 
   const subscriptionId = this._forecastSubscriptionId = (this._forecastSubscriptionId || 0) + 1;
   const callback = (event) => {
-    if (this._weatherUnavailable || subscriptionId !== this._forecastSubscriptionId || !Array.isArray(event.forecast)) return;
-    this.forecasts = event.forecast.map((entry) => ({ ...entry }));
+    if (subscriptionId !== this._forecastSubscriptionId) return;
+    const forecast = normalizeForecast(event?.forecast);
+    if (!forecast.length) return;
+    this.forecasts = forecast;
+    this._forecastReceivedAt = new Date().toISOString();
+    this.saveWeatherSnapshot();
     this.requestUpdate();
     this.drawChart();
   };
@@ -18603,6 +18704,9 @@ handleForecastTypeToggle() {
     return;
   }
   
+  // Invalidate the old type before changing the key or awaiting its unsubscribe.
+  this._forecastSubscriptionId = (this._forecastSubscriptionId || 0) + 1;
+
   // Update config
   this.config = {
     ...this.config,
@@ -18611,6 +18715,15 @@ handleForecastTypeToggle() {
       type: newType
     }
   };
+  this._snapshotKey = snapshotKey(this.config, this._hass);
+  const saved = readSnapshot(this._snapshotKey);
+  this.forecasts = saved?.forecast || [];
+  this._forecastReceivedAt = saved?.forecastReceivedAt || null;
+  if (this.forecastChart) {
+    this.forecastChart.destroy();
+    this.forecastChart = null;
+  }
+  this.saveWeatherSnapshot();
   
   // Unsubscribe from old forecast
   if (this.forecastSubscriber) {
@@ -20114,14 +20227,18 @@ updateChart({ forecasts, forecastChart } = this) {
           ${this.renderClock()}
           ${this.renderMain()}
           ${this.renderAttributes()}
-          <div class="chart-container">
+          <div class="chart-container" style="${this.forecasts?.length ? '' : 'display: none'}">
             <canvas id="forecastChart"></canvas>
           </div>
           ${this.renderForecastConditionIcons()}
           ${this.renderWind()}
           ${this.renderTextSensor()}
           <div class="weather-data-footer">
-            ${this.renderLastUpdated()}
+            ${this._weatherUnavailable ? '' : this.renderLastUpdated()}
+            ${this._weatherUnavailable && this._lastValidWeather?.last_changed ? x`<time class="snapshot-time" datetime="${this._lastValidWeather.last_changed}">最後有效資料：${new Date(this._lastValidWeather.last_changed).toLocaleString(this.language)}</time>` : ''}
+            ${this._weatherUnavailable && this.forecasts?.length && this._forecastReceivedAt ? x`<time class="snapshot-forecast-time" datetime="${this._forecastReceivedAt}">最後有效預報資料：${new Date(this._forecastReceivedAt).toLocaleString(this.language)}</time>` : ''}
+            ${this._weatherUnavailable && this._lastValidTextSensor?.value?.last_changed && !Number.isNaN(Date.parse(this._lastValidTextSensor.value.last_changed)) ? x`<time class="snapshot-text-time" datetime="${this._lastValidTextSensor.value.last_changed}">最後有效文字資料：${new Date(this._lastValidTextSensor.value.last_changed).toLocaleString(this.language)}</time>` : ''}
+            ${this._weatherUnavailable && !this._lastValidWeather && !this.forecasts?.length && !this._lastValidTextSensor ? x`<span class="weather-data-empty">尚無有效資料</span>` : ''}
             ${this._weatherUnavailable ? x`<span class="weather-data-status" role="status">資料暫時不可用</span>` : ''}
           </div>
         </div>
@@ -20135,14 +20252,13 @@ getTextSensorState() {
   }
 
   const entity = this.config.text_sensor_entity;
-  if (this._weatherUnavailable) {
-    return this._lastValidTextSensor && this._lastValidTextSensor.entity === entity ? this._lastValidTextSensor.value : null;
-  }
   const value = this._hass.states[entity];
-  if (value && value.state && !['unknown', 'unavailable', 'None', 'null'].includes(value.state)) {
+  if (value && typeof value.state === 'string' && value.state.trim() && !['unknown', 'unavailable', 'none', 'null', 'nan'].includes(value.state.trim().toLowerCase())) {
     this._lastValidTextSensor = { entity, value: { ...value, attributes: { ...value.attributes } } };
+    this.saveWeatherSnapshot();
+    return value;
   }
-  return value || null;
+  return this._lastValidTextSensor?.entity === entity ? this._lastValidTextSensor.value : null;
 }
 
 

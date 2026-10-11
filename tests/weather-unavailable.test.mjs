@@ -11,6 +11,9 @@ await import('../src/main.js');
 const { render } = await import('lit');
 
 function fixture(options = {}, state = 'sunny', attributes = {}) {
+  // Each synthetic fixture is an isolated installation; persistence across
+  // rebuilds is covered separately in the real-browser reload suite.
+  dom.window.localStorage.clear();
   const card = document.createElement('weather-chart-card');
   card.setConfig({ entity: 'weather.home', animated_icons: false, show_sun: false, ...options });
   let forecastCallback;
@@ -67,6 +70,36 @@ test('weather text remains with the previous snapshot during an outage', () => {
   f.card.hass = f.hass;
   root = f.draw(f.card.render());
   assert.equal(root.querySelector('.text-sensor-content'), null);
+});
+
+test('valid forecast and text arriving during weather outage update independently', () => {
+  const f = fixture({ show_text_sensor: true, text_sensor_entity: 'sensor.forecast_text', forecast: { condition_icons: false } }, 'sunny', { temperature: 22 });
+  f.card.drawChart = () => {};
+  f.forecast({ forecast: [{ datetime: '2026-10-12T12:00:00Z', temperature: 24 }] });
+  f.hass.states['weather.home'] = { state: 'unavailable', attributes: {} };
+  f.hass.states['sensor.forecast_text'] = { state: 'New text', last_changed: '2026-10-11T10:00:00Z', attributes: { friendly_name: 'Forecast' } };
+  f.card.hass = f.hass;
+  f.forecast({ forecast: [{ datetime: '2026-10-13T12:00:00Z', temperature: 25 }] });
+  const root = f.draw(f.card.render());
+  assert.equal(root.querySelector('.text-sensor-content').textContent.trim(), 'New text');
+  assert.deepEqual(f.card.computeForecastData().tempHigh, [25]);
+  assert.equal(root.querySelector('[role="status"]').textContent.trim(), '資料暫時不可用');
+});
+
+test('empty weather state with a numeric temperature cannot poison a valid snapshot', () => {
+  const f = fixture({}, 'sunny', { temperature: 22 });
+  f.hass.states['weather.home'] = { state: '', attributes: { temperature: 99 } };
+  f.card.hass = f.hass;
+  assert.equal(f.draw(f.card.render()).querySelector('.current-temp').textContent.trim(), '22°C');
+  assert.equal(f.card.weather.state, 'sunny');
+});
+
+test('forecast type toggle never displays daily data as hourly before hourly arrives', () => {
+  const f = fixture({}, 'sunny', { temperature: 22 });
+  f.card.drawChart = () => {};
+  f.forecast({ forecast: [{ datetime: '2026-10-12T12:00:00Z', temperature: 24 }] });
+  f.card.handleForecastTypeToggle();
+  assert.deepEqual(f.card.computeForecastData().tempHigh, []);
 });
 
 test('missing forecast payload does not erase the last usable forecast', () => {
@@ -225,6 +258,7 @@ test('initial unavailable render has safe empty data, status and no fabricated f
   const root = f.draw(f.card.render());
   assert.equal(root.querySelector('.current-temp').textContent.trim(), '—');
   assert.equal(root.querySelector('[role="status"]').textContent.trim(), '資料暫時不可用');
+  assert.match(root.textContent, /尚無有效資料/);
   assert.equal(root.querySelector('.updated'), null);
   assert.doesNotMatch(root.textContent, /NaN|Infinity|undefined|null|Invalid Date|0°C/);
 });

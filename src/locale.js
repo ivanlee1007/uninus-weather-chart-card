@@ -33,10 +33,51 @@ const zhTW = {
   'snowy-rainy': '雨夾雪',
   'sunny': '晴天',
   'windy': '有風',
-  'windy-variant': '強風'
+  'windy-variant': '強風',
+  'daily': '每日',
+  'hourly': '每小時'
 };
 
 const locale = {
+  he: {
+    'tempHi': 'טמפרטורה',
+    'tempLo': 'טמפרטורה בלילה',
+    'precip': 'משקעים',
+    'feelsLike': 'מרגיש כמו',
+    'days': ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'],
+    'months': ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'],
+    'units': {
+      'km/h': 'קמ״ש',
+      'm/s': 'מ׳/ש׳',
+      'mph': 'מייל/שעה',
+      'Bft': 'Bft',
+      'hPa': 'hPa',
+      'mmHg': 'מ״מ כספית',
+      'mm': 'מ״מ',
+      'in': 'אינץ׳'
+    },
+    'cardinalDirections': [
+      'צ', 'צ-צ מז', 'צ מז', 'מז-צ מז', 'מז', 'מז-ד מז', 'ד מז', 'ד-ד מז',
+      'ד', 'ד-ד מע', 'ד מע', 'מע-ד מע', 'מע', 'מע-צ מע', 'צ מע', 'צ-צ מע', 'צ'
+    ],
+    'clear-night': 'לילה בהיר',
+    'cloudy': 'מעונן',
+    'exceptional': 'מזג אוויר קיצוני',
+    'fog': 'ערפל',
+    'hail': 'ברד',
+    'lightning': 'ברקים',
+    'lightning-rainy': 'סופות רעמים וגשם',
+    'partlycloudy': 'מעונן חלקית',
+    'pouring': 'גשם כבד',
+    'rainy': 'גשום',
+    'snowy': 'שלג',
+    'snowy-rainy': 'גשם מעורב בשלג',
+    'sunny': 'שמשי',
+    'windy': 'רוחות',
+    'windy-variant': 'רוחות חזקות',
+    'daily': 'יומי',
+    'hourly': 'שעתי'
+  },
   'zh-TW': zhTW,
   'zh-Hant': zhTW,
   zh: zhTW,
@@ -75,7 +116,9 @@ const locale = {
     'snowy-rainy': 'Sníh s deštěm',
     'sunny': 'Jasno',
     'windy': 'Větrno',
-    'windy-variant': 'Větrno'
+    'windy-variant': 'Větrno',
+    'daily': 'Denní',
+    'hourly': 'Hodinová'
   },
   sk: {
     'tempHi': 'Teplota',
@@ -112,7 +155,9 @@ const locale = {
     'snowy-rainy': 'Sneh s dažďom',
     'sunny': 'Jasno',
     'windy': 'Veterno',
-    'windy-variant': 'Veterno'
+    'windy-variant': 'Veterno',
+    'daily': 'Denná',
+    'hourly': 'Hodinová'
   },  
   de: {
     'tempHi': 'Temperatur',
@@ -149,7 +194,9 @@ const locale = {
     'snowy-rainy': 'Schneeregen',
     'sunny': 'Sonne',
     'windy': 'Windig',
-    'windy-variant': 'Windig'
+    'windy-variant': 'Windig',
+    'daily': 'Täglich',
+    'hourly': 'Stündlich'
   },
   nl: {
     'tempHi': 'Temperatuur',
@@ -186,7 +233,9 @@ const locale = {
     'snowy-rainy': 'Sneeuw, regen',
     'sunny': 'Zonnig',
     'windy': 'Winderig',
-    'windy-variant': 'Winderig'
+    'windy-variant': 'Winderig',
+    'daily': 'Dagelijks',
+    'hourly': 'Per uur'
   },
   en: {
     'tempHi': 'Temperature',
@@ -223,7 +272,9 @@ const locale = {
     'snowy-rainy': 'Snowy, rainy',
     'sunny': 'Sunny',
     'windy': 'Windy',
-    'windy-variant': 'Windy'
+    'windy-variant': 'Windy',
+    'daily': 'Daily',
+    'hourly': 'Hourly'
   },
   es: {
     'tempHi': 'Temperatura máxima',
@@ -260,7 +311,9 @@ const locale = {
     'snowy-rainy': 'Aguanieve',
     'sunny': 'Soleado',
     'windy': 'Viento',
-    'windy-variant': 'Viento variable'
+    'windy-variant': 'Viento variable',
+    'daily': 'Diario',
+    'hourly': 'Por hora'
   },
   fi: {
     'tempHi': 'Lämpötila ylin',
@@ -297,7 +350,9 @@ const locale = {
     'snowy-rainy': 'R\u00e4nt\u00e4sadetta',
     'sunny': 'Aurinkoista',
     'windy': 'Tuulista',
-    'windy-variant': 'Tuulista'
+    'windy-variant': 'Tuulista',
+    'daily': 'Päivittäin',
+    'hourly': 'Tunneittain'
   },
   hu: {
     'tempHi': 'Max. hőmérséklet',
@@ -334,7 +389,9 @@ const locale = {
     'snowy-rainy': 'Havas eső',
     'sunny': 'Napos',
     'windy': 'Szeles',
-    'windy-variant': 'Szeles'
+    'windy-variant': 'Szeles',
+    'daily': 'Napi',
+    'hourly': 'Óránkénti'
   },
   ru: {
     'tempHi': 'Температура',
@@ -371,7 +428,9 @@ const locale = {
     'snowy-rainy': 'Снег с дождем',
     'sunny': 'Ясно',
     'windy': 'Ветрено',
-    'windy-variant': 'Ветрено'
+    'windy-variant': 'Ветрено',
+    'daily': 'По дням',
+    'hourly': 'По часам'
   },
   sv: {
     'tempHi': 'Temperatur max',
@@ -408,7 +467,9 @@ const locale = {
     'snowy-rainy': 'Snöblandat regn',
     'sunny': 'Soligt',
     'windy': 'Blåsigt',
-    'windy-variant': 'Blåsigt'
+    'windy-variant': 'Blåsigt',
+    'daily': 'Dagligen',
+    'hourly': 'Timvis'
   },
   fr: {
     'tempHi': 'Température max',
@@ -445,7 +506,9 @@ const locale = {
     'snowy-rainy': 'Neige et Pluie',
     'sunny': 'Ensoleillé',
     'windy': 'Venteux',
-    'windy-variant': 'Venteux'
+    'windy-variant': 'Venteux',
+    'daily': 'Par jour',
+    'hourly': 'Par heure'
   },
   pl: {
     'tempHi': 'Temperatura',
@@ -482,7 +545,9 @@ const locale = {
     'snowy-rainy': 'Śnieg z deszczem',
     'sunny': 'Słonecznie',
     'windy': 'Wietrznie',
-    'windy-variant': 'Zmienny wiatr'
+    'windy-variant': 'Zmienny wiatr',
+    'daily': 'Dzienna',
+    'hourly': 'Godzinowa'
   },
   nb: {
     'tempHi': 'Maksimumstemperatur',
@@ -519,7 +584,9 @@ const locale = {
     'snowy-rainy': 'Sludd',
     'sunny': 'Sol',
     'windy': 'Vind',
-    'windy-variant': 'Vind'
+    'windy-variant': 'Vind',
+    'daily': 'Daglig',
+    'hourly': 'Timevis'
   },
   da: {
     'tempHi': 'Temperatur',
@@ -556,7 +623,9 @@ const locale = {
     'snowy-rainy': 'Slud',
     'sunny': 'Sol',
     'windy': 'Blæsende',
-    'windy-variant': 'Blæsende'
+    'windy-variant': 'Blæsende',
+    'daily': 'Dagligt',
+    'hourly': 'Timevis'
   },
   it: {
     'tempHi': 'Temperatura massima',
@@ -593,7 +662,9 @@ const locale = {
     'snowy-rainy': 'Neve e pioggia',
     'sunny': 'Soleggiato',
     'windy': 'Ventoso',
-    'windy-variant': 'Ventoso'
+    'windy-variant': 'Ventoso',
+    'daily': 'Giornaliero',
+    'hourly': 'Orario'
   },
   pt: {
     'tempHi': 'Temperatura máxima',
@@ -630,7 +701,9 @@ const locale = {
     'snowy-rainy': 'Neve e chuva',
     'sunny': 'Ensolarado',
     'windy': 'Ventoso',
-    'windy-variant': 'Ventoso'
+    'windy-variant': 'Ventoso',
+    'daily': 'Diário',
+    'hourly': 'Por hora'
   },
   el: {
     'tempHi': 'Μέγιστη θερμοκρασία',
@@ -667,7 +740,9 @@ const locale = {
     'snowy-rainy': 'Χιονόνερο',
     'sunny': 'Ηλιόλουστο',
     'windy': 'Ανεμώδης',
-    'windy-variant': 'Ανεμώδης'
+    'windy-variant': 'Ανεμώδης',
+    'daily': 'Ημερήσια',
+    'hourly': 'Ωριαία'
   },
   bg: {
     'tempHi': 'Максимална температура',
@@ -704,7 +779,9 @@ const locale = {
     'snowy-rainy': 'Сняг с дъжд',
     'sunny': 'Ясно',
     'windy': 'Ветровито',
-    'windy-variant': 'Ветровито'
+    'windy-variant': 'Ветровито',
+    'daily': 'По дни',
+    'hourly': 'По часове'
   },
   lt: {
     'tempHi': 'Dieną',
@@ -741,7 +818,9 @@ const locale = {
     'snowy-rainy': 'Šlapdriba',
     'sunny': 'Saulėta',
     'windy': 'Vėjuota',
-    'windy-variant': 'Vėjuota'
+    'windy-variant': 'Vėjuota',
+    'daily': 'Dienomis',
+    'hourly': 'Valandomis'
   },
   ca: {
     'tempHi': 'Temperatura màxima',
@@ -778,7 +857,9 @@ const locale = {
     'snowy-rainy': 'Aiguaneu',
     'sunny': 'Assolellat',
     'windy': 'Ventós',
-    'windy-variant': 'Ràfegues de vent'
+    'windy-variant': 'Ràfegues de vent',
+    'daily': 'Diari',
+    'hourly': 'Per hores'
   },
   ro: {
     'tempHi': 'Temperatură',
@@ -815,7 +896,9 @@ const locale = {
     'snowy-rainy': 'Lapoviță',
     'sunny': 'Cer senin',
     'windy': 'Vânt',
-    'windy-variant': 'Vânt in rafale'
+    'windy-variant': 'Vânt in rafale',
+    'daily': 'Zilnic',
+    'hourly': 'Orar'
   },
   uk: {
     'tempHi': 'Температура',
@@ -852,7 +935,9 @@ const locale = {
     'snowy-rainy': 'Мокрий сніг',
     'sunny': 'Сонячно',
     'windy': 'Вітряно',
-    'windy-variant': 'Вітряно'
+    'windy-variant': 'Вітряно',
+    'daily': 'За днями',
+    'hourly': 'За годинами'
   },
   ko: {
     'tempHi': '최고 기온',
@@ -889,7 +974,9 @@ const locale = {
     'snowy-rainy': '진눈깨비',
     'sunny': '맑음',
     'windy': '바람',
-    'windy-variant': '강풍'
+    'windy-variant': '강풍',
+    'daily': '일별',
+    'hourly': '시간별'
   },
 };
 

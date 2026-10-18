@@ -67,7 +67,7 @@ Type: module
 4. Refresh the browser
 
 > The canonical custom element is `custom:weather-chart-card`.
-> `weather-chart-card-ha.js` may still exist as a build artifact, but the documented card type is **not** `custom:weather-chart-card-ha`.
+> The published frontend file is `weather-chart-card-ha.js`; the card type is **not** `custom:weather-chart-card-ha`.
 
 ---
 
@@ -350,7 +350,7 @@ That means:
 ## Development
 
 ```bash
-npm install
+npm ci
 npm run build
 ```
 
@@ -360,6 +360,9 @@ Build outputs:
 - `dist/weather-chart-card-ha.js`
 
 For HACS, the published frontend filename is `weather-chart-card-ha.js`.
+
+See [deployment and release guidance](DEPLOYMENT.md) and the
+[regression test instructions](tests/README.md) before submitting changes.
 
 ---
 

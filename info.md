@@ -24,7 +24,7 @@ forecast:
 
 ## Notes
 
-Rebrand changes are unreleased. Existing `custom:weather-chart-card` YAML is supported by the new bundle. HACS resource URLs may require a manual update; see [UPGRADING.md](UPGRADING.md).
+Version v1.6.9 introduces the rebrand. Existing `custom:weather-chart-card` YAML is supported by the new bundle. HACS resource URLs may require a manual update; see [UPGRADING.md](UPGRADING.md).
 
 - HACS display name: **uninus-weather-chart-card**
 - Canonical card type: `custom:uninus-weather-chart-card`

@@ -2,11 +2,10 @@
 
 ## Status
 
-This compatibility-preserving rebrand is **unreleased**. The package version stays
-`1.6.8`; existing published v1.6.8 assets are historical and do not include these
-changes. Do not retag or overwrite that release. A future release requires separate
-authorization and an unused version. No Home Assistant installation is changed by
-building this repository.
+Version **v1.6.9** introduces this compatibility-preserving rebrand. Existing
+published v1.6.8 assets are historical and do not include these changes; they
+remain unchanged. No Home Assistant installation is changed by building or
+publishing this repository. Live HACS/HA migration has not been verified.
 
 ## Names and compatibility
 
@@ -33,13 +32,13 @@ Last-valid snapshots remain usable with either YAML type on the same origin and
 with the same site/entity/forecast/text identity. Browser storage remains
 best-effort; changing the HA origin or clearing storage loses that history.
 
-## HACS upgrade checklist (after a new release is available)
+## HACS upgrade checklist (v1.6.9 and later)
 
 1. Back up dashboard/resource configuration and note the current repository and
    resource URLs before updating. Confirm the renamed repository in HACS; a
    GitHub repository rename does not guarantee every HACS installation migrates
    its stored namespace automatically.
-2. Install the separately released rebrand through HACS. `hacs.json` selects
+2. Install v1.6.9 or later through HACS. `hacs.json` selects
    **`uninus-weather-chart-card.js`**. HACS may download **only that selected
    JavaScript**, not the compatibility filenames or either icon directory, even
    when they are all present as release assets/in the ZIP.
@@ -64,7 +63,7 @@ regressions use isolated synthetic HA state and installed Edge.
 
 ## Manual/offline installation
 
-Use the future `uninus-weather-chart-card.zip` and extract its three standalone
+Use `uninus-weather-chart-card.zip` and extract its three standalone
 JavaScript files plus `icons/` and `icons2/`. Put the canonical file in `<config>/www/`
 and load `/local/uninus-weather-chart-card.js` as a module. If retaining a manual
 legacy resource, copy the corresponding legacy file to its existing path; either
@@ -74,6 +73,6 @@ For fully offline icons, copy both icon directories alongside the script, then
 set `icons: /local/icons/` (style1) or `icons: /local/icons2/` (style2), adjusting the
 path if using a subdirectory. Setting `animated_icons: false` uses HA/MDI icons.
 The JavaScript itself needs no CDN, but animated SVG icons default to the
-repository's jsDelivr CDN. The canonical CDN path may return 404 until the remote
-rename and source publication are complete, and caches may take time to update.
+repository's jsDelivr CDN. CDN caches may take time to update after a release;
+use the explicit local icon paths above when offline access is required.
 Local fallback is best-effort and cannot supply icon files HACS did not install.

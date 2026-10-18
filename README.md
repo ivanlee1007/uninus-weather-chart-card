@@ -44,7 +44,7 @@ This fork focuses on:
 
 ## Installation
 
-The rebrand is **unreleased**; package version stays `1.6.8` until a separately authorized release. Existing v1.6.8 release assets do not contain the new filename. See [upgrade guidance](UPGRADING.md).
+Version **v1.6.9** introduces the compatibility-preserving rebrand. Existing v1.6.8 release assets do not contain the new filename. See [upgrade guidance](UPGRADING.md), especially when updating existing HACS resource URLs.
 
 ### HACS (recommended)
 
@@ -57,7 +57,7 @@ The rebrand is **unreleased**; package version stays `1.6.8` until a separately 
 
 ### Manual installation
 
-1. Once the rebrand is released, download `uninus-weather-chart-card.zip` (includes optional local icons) or the standalone `uninus-weather-chart-card.js` from the [latest release](https://github.com/ivanlee1007/uninus-weather-chart-card/releases/latest)
+1. Download `uninus-weather-chart-card.zip` (includes optional local icons) or the standalone `uninus-weather-chart-card.js` from the [latest release](https://github.com/ivanlee1007/uninus-weather-chart-card/releases/latest)
 2. Copy `uninus-weather-chart-card.js` to `<config>/www/`; for offline icons, also copy the ZIP's `icons/` and `icons2/` folders alongside it and set `icons: /local/icons/` (or `/local/icons2/`). HACS may download only the selected JavaScript, not the icon folders.
 3. Add a Lovelace resource:
 

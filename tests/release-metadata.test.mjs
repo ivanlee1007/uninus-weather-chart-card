@@ -5,7 +5,7 @@ import { test } from 'node:test';
 const read = (path) => readFileSync(new URL(path, import.meta.url), 'utf8');
 const filenames = ['uninus-weather-chart-card.js', 'weather-chart-card-ha.js', 'weather-chart-card.js'];
 
-test('rebrand metadata retains version 1.6.8 and selects a standalone canonical HACS asset', () => {
+test('v1.6.9 release metadata selects a standalone canonical HACS asset', () => {
   const pkg = JSON.parse(read('../package.json'));
   const lock = JSON.parse(read('../package-lock.json'));
   const hacs = JSON.parse(read('../hacs.json'));
@@ -15,12 +15,12 @@ test('rebrand metadata retains version 1.6.8 and selects a standalone canonical 
   assert.equal(hacs.name, pkg.name);
   assert.equal(hacs.filename, filenames[0]);
   assert.equal(pkg.repository.url, 'https://github.com/ivanlee1007/uninus-weather-chart-card.git');
-  assert.equal(pkg.version, '1.6.8');
+  assert.equal(pkg.version, '1.6.9');
   assert.equal(lock.version, pkg.version);
   assert.equal(lock.packages[''].version, pkg.version);
   for (const name of filenames) {
     const bundle = read(`../dist/${name}`);
-    assert.match(bundle.split('\n', 1)[0], /^\/\* uninus-weather-chart-card v1\.6\.8 \*\/$/);
+    assert.match(bundle.split('\n', 1)[0], /^\/\* uninus-weather-chart-card v1\.6\.9 \*\/$/);
     assert.equal(bundle, read(`../dist/${filenames[0]}`));
     assert.doesNotMatch(bundle, /\bimport\s*(?:\(|['"{*])/);
   }

@@ -1,9 +1,9 @@
 # Deployment Notes
 
-The target repository/HACS/card name is **uninus-weather-chart-card**. The rebrand
-is unreleased; see [UPGRADING.md](UPGRADING.md) for resource migration and HACS
-single-file installation limitations. No remote rename, release or HA deployment
-is performed by a local build.
+The repository/HACS/card name is **uninus-weather-chart-card** as of v1.6.9.
+See [UPGRADING.md](UPGRADING.md) for resource migration and HACS single-file
+installation limitations. A local build does not publish a release or deploy
+anything to Home Assistant.
 
 ## Canonical identifiers
 
@@ -29,10 +29,10 @@ Submit changes for review before merging into `master`.
 
 ## Release workflow (separate authorization required)
 
-The package version remains `1.6.8` for this working-tree rebrand. Do not retag or
-overwrite the existing v1.6.8 release. Before any future release, choose an unused
-version and update package/lock metadata, regression expectations and release
-notes together; the commands below are not authorization to publish.
+The rebrand release version is `1.6.9`. Do not retag or overwrite existing
+releases. Before each future release, choose an unused version and update
+package/lock metadata, regression expectations and release notes together;
+the commands below are not authorization to publish.
 
 After the reviewed changes are merged and checks pass, create a tag from the
 intended `master` commit (replace `vX.Y.Z` with the package version):
@@ -62,8 +62,8 @@ may download only that file, excluding aliases/icons. Each JS entrypoint is
 self-contained; extra JS files and icons are available in the manual ZIP, but
 release assets alone do not guarantee HACS installs them. Existing resource URLs
 may need manual migration; old HACS paths are not guaranteed to redirect. Keep
-exactly one working canonical resource after upgrading. The new CDN paths may
-404 until the remote rename and publication are complete.
+exactly one working canonical resource after upgrading. CDN caches may take time
+to update after publication; manual/offline installs can use explicit local icons.
 
 ## Before calling a release done
 

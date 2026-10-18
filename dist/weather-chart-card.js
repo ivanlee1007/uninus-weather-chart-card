@@ -1,4 +1,4 @@
-/* uninus-weather-chart-card v1.6.8 */
+/* uninus-weather-chart-card v1.6.9 */
 (function () {
 'use strict';
 

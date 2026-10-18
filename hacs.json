@@ -1,7 +1,7 @@
 {
-  "name": "UNiNUS Weather Chart Card",
+  "name": "uninus-weather-chart-card",
   "content_in_root": false,
   "render_readme": true,
-  "filename": "weather-chart-card-ha.js",
+  "filename": "uninus-weather-chart-card.js",
   "homeassistant": "2024.1.0"
 }

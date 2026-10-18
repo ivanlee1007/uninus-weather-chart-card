@@ -17,7 +17,7 @@ Chart.register(...registerables, ChartDataLabels);
 class WeatherChartCard extends LitElement {
 
 static getConfigElement() {
-  return document.createElement("weather-chart-card-editor");
+  return document.createElement("uninus-weather-chart-card-editor");
 }
 
 static getStubConfig(hass, unusedEntities, allEntities) {
@@ -27,7 +27,7 @@ static getStubConfig(hass, unusedEntities, allEntities) {
   }
   return {
     entity,
-    title: 'Enhanced Weather Chart Card',
+    title: 'uninus-weather-chart-card',
     show_main: true,
     show_temperature: true,
     show_current_condition: true,
@@ -115,7 +115,7 @@ setConfig(config) {
     this._snapshotKey = undefined;
   }
   const cardConfig = {
-    title: 'Enhanced Weather Chart Card',
+    title: 'uninus-weather-chart-card',
     icons_size: 30,
     animated_icons: true,
     icon_style: 'style1',
@@ -182,8 +182,8 @@ setConfig(config) {
     // Using @latest for better CDN caching and reliability
     // style1 = fill (default), style2 = line
     this.baseIconPath = cardConfig.icon_style === 'style2'
-      ? 'https://cdn.jsdelivr.net/gh/ivanlee1007/weather-chart-card@latest/dist/icons2/'
-      : 'https://cdn.jsdelivr.net/gh/ivanlee1007/weather-chart-card@latest/dist/icons/';
+      ? 'https://cdn.jsdelivr.net/gh/ivanlee1007/uninus-weather-chart-card@latest/dist/icons2/'
+      : 'https://cdn.jsdelivr.net/gh/ivanlee1007/uninus-weather-chart-card@latest/dist/icons/';
   }
 
   this.config = cardConfig;
@@ -675,7 +675,7 @@ getLocalizedMonthNameShort(date, timezone) {
       return `${basePath}/icons/`;
     }
     // Fallback paths for common installations
-    return '/hacsfiles/weather-chart-card-ha/icons/';
+    return '/hacsfiles/uninus-weather-chart-card/icons/';
   }
 
   /**
@@ -2527,15 +2527,21 @@ renderLastUpdated() {
 // Regex to detect Latin script characters for uppercase formatting (ES2019 compatible)
 WeatherChartCard.LATIN_SCRIPT_REGEX = /^[A-Za-z]+$/;
 
+if (!customElements.get('uninus-weather-chart-card')) {
+  customElements.define('uninus-weather-chart-card', WeatherChartCard);
+}
 if (!customElements.get('weather-chart-card')) {
-  customElements.define('weather-chart-card', WeatherChartCard);
+  // CustomElementRegistry cannot register the same constructor under two tags.
+  customElements.define('weather-chart-card', class extends customElements.get('uninus-weather-chart-card') {});
 }
 
 window.customCards = window.customCards || [];
-window.customCards.push({
-  type: "weather-chart-card",
-  name: "UNiNUS Weather Chart Card",
-  description: "UNiNUS weather card with charts and Home Assistant-native editor selectors.",
-  preview: true,
-  documentationURL: "https://github.com/ivanlee1007/weather-chart-card",
-});
+if (!window.customCards.some((card) => card.type === 'uninus-weather-chart-card')) {
+  window.customCards.push({
+    type: "uninus-weather-chart-card",
+    name: "uninus-weather-chart-card",
+    description: "UNiNUS weather card with charts and Home Assistant-native editor selectors.",
+    preview: true,
+    documentationURL: "https://github.com/ivanlee1007/uninus-weather-chart-card",
+  });
+}

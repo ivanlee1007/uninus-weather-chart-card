@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — uninus-weather-chart-card rebrand
+
+- Canonical repository, HACS/card picker name, YAML type and frontend filename use `uninus-weather-chart-card`. Package version stays `1.6.8`; no new release or deployment is implied.
+- Retain legacy `custom:weather-chart-card`, both standalone legacy JavaScript filenames and the existing snapshot storage prefix. Guard complete bundles against repeated dependency initialization and duplicate registration.
+- Publish-ready workflow includes all three standalone JS assets and both icon sets in the ZIP; HACS may install only its selected canonical JS. Existing HACS resource URLs may require manual migration; no old-path redirect is promised. See [UPGRADING.md](UPGRADING.md).
+- Add real-browser entrypoint-order, mixed-card/editor and snapshot compatibility regressions; validation/release gates use Node 24 and install Chromium before the full suite.
+
 ## v1.6.8 — 候選版本（尚未發布）
 
 - 在同一瀏覽器站點的可用儲存空間中保存每張卡片最後有效的天氣讀數、預報與文字；天氣暫時不可用後，即使重新整理或重建卡片，仍可恢復已保存的資料與最後有效時間，並明示「資料暫時不可用」。沒有有效快照時不捏造數據。

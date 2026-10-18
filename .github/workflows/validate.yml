@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '24'
       
       - name: Diagnostic - Check environment
         run: |
@@ -38,17 +38,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Build
-        run: npm run build
+      - name: Install browser for regressions
+        run: npx playwright install --with-deps chromium
+
+      - name: Lint, build and regression tests
+        run: npm test
       
       - name: Verify build output
         run: |
-          if [ ! -f "dist/weather-chart-card-ha.js" ]; then
+          if [ ! -f "dist/uninus-weather-chart-card.js" ]; then
             echo "Error: Build output not found!"
             exit 1
           fi
           echo "✅ Build successful!"
-          echo "File size: $(wc -c < dist/weather-chart-card-ha.js) bytes"
+          echo "File size: $(wc -c < dist/uninus-weather-chart-card.js) bytes"
       
       - name: Check HACS files
         run: |

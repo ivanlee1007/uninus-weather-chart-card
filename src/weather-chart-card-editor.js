@@ -1028,6 +1028,9 @@ class WeatherChartCardEditor extends LitElement {
     `;
   }
 }
+if (!customElements.get('uninus-weather-chart-card-editor')) {
+  customElements.define('uninus-weather-chart-card-editor', WeatherChartCardEditor);
+}
 if (!customElements.get('weather-chart-card-editor')) {
-  customElements.define('weather-chart-card-editor', WeatherChartCardEditor);
+  customElements.define('weather-chart-card-editor', class extends customElements.get('uninus-weather-chart-card-editor') {});
 }

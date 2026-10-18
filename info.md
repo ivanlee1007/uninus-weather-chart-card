@@ -1,4 +1,4 @@
-# UNiNUS Weather Chart Card
+# uninus-weather-chart-card
 
 A Home Assistant weather forecast card with enhanced visualization, HA-native editor selectors, and practical customization features.
 
@@ -15,7 +15,7 @@ A Home Assistant weather forecast card with enhanced visualization, HA-native ed
 ## Quick start
 
 ```yaml
-type: custom:weather-chart-card
+type: custom:uninus-weather-chart-card
 entity: weather.your_weather_entity
 forecast:
   show_date_labels: true
@@ -24,9 +24,11 @@ forecast:
 
 ## Notes
 
-- HACS display name: **UNiNUS Weather Chart Card**
-- Canonical card type: `custom:weather-chart-card`
-- Full documentation: <https://github.com/ivanlee1007/weather-chart-card>
+Rebrand changes are unreleased. Existing `custom:weather-chart-card` YAML is supported by the new bundle. HACS resource URLs may require a manual update; see [UPGRADING.md](UPGRADING.md).
+
+- HACS display name: **uninus-weather-chart-card**
+- Canonical card type: `custom:uninus-weather-chart-card`
+- Full documentation: <https://github.com/ivanlee1007/uninus-weather-chart-card>
 
 ## Credits
 

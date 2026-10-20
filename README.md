@@ -1,20 +1,20 @@
-<h1 align="center">UNiNUS Weather Chart Card</h1>
+<h1 align="center">uninus-weather-chart-card</h1>
 
 <div align="center">
 
-[![HACS](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
-[![GitHub Release](https://img.shields.io/github/v/release/ivanlee1007/weather-chart-card.svg)](https://github.com/ivanlee1007/weather-chart-card/releases)
-![GitHub downloads](https://img.shields.io/github/downloads/ivanlee1007/weather-chart-card/total?style=flat-square)
-[![License](https://img.shields.io/github/license/ivanlee1007/weather-chart-card.svg)](LICENSE)
+[![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![GitHub Release](https://img.shields.io/github/v/release/ivanlee1007/uninus-weather-chart-card.svg)](https://github.com/ivanlee1007/uninus-weather-chart-card/releases)
+![GitHub downloads](https://img.shields.io/github/downloads/ivanlee1007/uninus-weather-chart-card/total?style=flat-square)
+[![License](https://img.shields.io/github/license/ivanlee1007/uninus-weather-chart-card.svg)](LICENSE)
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?repository=weather-chart-card&owner=ivanlee1007)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?repository=uninus-weather-chart-card&owner=ivanlee1007)
 
 </div>
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/ivanlee1007/weather-chart-card/master/screenshots/weather-en.png" width="30%" alt="English locale">
-  <img src="https://raw.githubusercontent.com/ivanlee1007/weather-chart-card/master/screenshots/weather-ro.png" width="30%" alt="Romanian locale">
-  <img src="https://raw.githubusercontent.com/ivanlee1007/weather-chart-card/master/screenshots/weather-hourly.png" width="30%" alt="Hourly view">
+  <img src="https://raw.githubusercontent.com/ivanlee1007/uninus-weather-chart-card/master/screenshots/weather-en.png" width="30%" alt="English locale">
+  <img src="https://raw.githubusercontent.com/ivanlee1007/uninus-weather-chart-card/master/screenshots/weather-ro.png" width="30%" alt="Romanian locale">
+  <img src="https://raw.githubusercontent.com/ivanlee1007/uninus-weather-chart-card/master/screenshots/weather-hourly.png" width="30%" alt="Hourly view">
 </div>
 
 ## About This Fork
@@ -44,30 +44,33 @@ This fork focuses on:
 
 ## Installation
 
+Version **v1.6.9** introduces the compatibility-preserving rebrand. Existing v1.6.8 release assets do not contain the new filename. See [upgrade guidance](UPGRADING.md), especially when updating existing HACS resource URLs.
+
 ### HACS (recommended)
 
 1. Open **HACS** in Home Assistant
 2. Go to **Frontend**
 3. Click **Explore & Download Repositories**
-4. Search for **UNiNUS Weather Chart Card**
+4. Search for **uninus-weather-chart-card**; if not indexed, add `ivanlee1007/uninus-weather-chart-card` as a custom repository (Dashboard/Plugin)
 5. Download
 6. Refresh the browser (hard refresh recommended)
 
 ### Manual installation
 
-1. Download `weather-chart-card-ha.js` from the [latest release](https://github.com/ivanlee1007/weather-chart-card/releases/latest)
-2. Copy it to `<config>/www/`
+1. Download `uninus-weather-chart-card.zip` (includes optional local icons) or the standalone `uninus-weather-chart-card.js` from the [latest release](https://github.com/ivanlee1007/uninus-weather-chart-card/releases/latest)
+2. Copy `uninus-weather-chart-card.js` to `<config>/www/`; for offline icons, also copy the ZIP's `icons/` and `icons2/` folders alongside it and set `icons: /local/icons/` (or `/local/icons2/`). HACS may download only the selected JavaScript, not the icon folders.
 3. Add a Lovelace resource:
 
 ```text
-URL: /local/weather-chart-card-ha.js
+URL: /local/uninus-weather-chart-card.js
 Type: module
 ```
 
 4. Refresh the browser
 
-> The canonical custom element is `custom:weather-chart-card`.
-> `weather-chart-card-ha.js` may still exist as a build artifact, but the documented card type is **not** `custom:weather-chart-card-ha`.
+> The canonical custom element is `custom:uninus-weather-chart-card`.
+> The published frontend file is `uninus-weather-chart-card.js`. Legacy `custom:weather-chart-card` YAML remains supported.
+> See [upgrade guidance](UPGRADING.md) before changing existing HACS resources.
 
 ---
 
@@ -76,14 +79,14 @@ Type: module
 ### Basic
 
 ```yaml
-type: custom:weather-chart-card
+type: custom:uninus-weather-chart-card
 entity: weather.home
 ```
 
 ### Recommended
 
 ```yaml
-type: custom:weather-chart-card
+type: custom:uninus-weather-chart-card
 entity: weather.home
 location_name: Home
 show_time: true
@@ -127,7 +130,7 @@ The card reads each sensor state and attributes:
 ### Example
 
 ```yaml
-type: custom:weather-chart-card
+type: custom:uninus-weather-chart-card
 entity: weather.opencwa_an_ping_qu
 location_name: 安平區
 show_alerts: true
@@ -164,7 +167,7 @@ You can optionally show an extra text block under the main weather content.
 ### Example
 
 ```yaml
-type: custom:weather-chart-card
+type: custom:uninus-weather-chart-card
 entity: weather.home
 show_text_sensor: true
 text_sensor_entity: sensor.opencwa_forecast_summary
@@ -189,11 +192,11 @@ text_sensor_content_size: 16
 
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
-| `type` | string | required | Use `custom:weather-chart-card` |
+| `type` | string | required | Use `custom:uninus-weather-chart-card` |
 | `entity` | string | required | Weather entity |
 | `location_name` | string | empty | Optional location label |
 | `timezone` | string | empty | Optional timezone override |
-| `title` | string | empty | Card title |
+| `title` | string | `uninus-weather-chart-card` | Card title; explicit values are preserved |
 | `show_main` | boolean | `true` | Show main weather section |
 | `show_temperature` | boolean | `true` | Show current temperature |
 | `show_current_condition` | boolean | `true` | Show current weather condition |
@@ -281,7 +284,7 @@ These are configured through the GUI editor with HA-native entity selectors.
 ### Dual-location setup
 
 ```yaml
-type: custom:weather-chart-card
+type: custom:uninus-weather-chart-card
 entity: weather.forecast_issaquah
 location_name: Issaquah
 timezone: America/Los_Angeles
@@ -295,7 +298,7 @@ forecast:
 ```
 
 ```yaml
-type: custom:weather-chart-card
+type: custom:uninus-weather-chart-card
 entity: weather.forecast_campina
 location_name: Câmpina
 timezone: Europe/Bucharest
@@ -311,7 +314,7 @@ forecast:
 ### Minimal chart view
 
 ```yaml
-type: custom:weather-chart-card
+type: custom:uninus-weather-chart-card
 entity: weather.home
 show_main: false
 show_attributes: false
@@ -323,7 +326,7 @@ forecast:
 ### Text sensor summary block
 
 ```yaml
-type: custom:weather-chart-card
+type: custom:uninus-weather-chart-card
 entity: weather.home
 show_text_sensor: true
 text_sensor_entity: sensor.daily_summary
@@ -350,16 +353,20 @@ That means:
 ## Development
 
 ```bash
-npm install
+npm ci
 npm run build
 ```
 
 Build outputs:
 
-- `dist/weather-chart-card.js`
-- `dist/weather-chart-card-ha.js`
+- `dist/uninus-weather-chart-card.js` (canonical, self-contained)
+- `dist/weather-chart-card-ha.js` (legacy standalone entrypoint)
+- `dist/weather-chart-card.js` (legacy standalone entrypoint)
 
-For HACS, the published frontend filename is `weather-chart-card-ha.js`.
+For HACS, the published frontend filename is `uninus-weather-chart-card.js`.
+
+See [deployment and release guidance](DEPLOYMENT.md) and the
+[regression test instructions](tests/README.md) before submitting changes.
 
 ---
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weather Chart Card - Comprehensive Test Suite</title>
+  <title>uninus-weather-chart-card - Comprehensive Test Suite</title>
   <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css" rel="stylesheet">
   <style>
     body {
@@ -175,7 +175,7 @@
 <body class="light-mode">
   <div class="container">
     <div class="test-header">
-      <h1>🌤️ Weather Chart Card - Test Suite</h1>
+      <h1>🌤️ uninus-weather-chart-card - Test Suite</h1>
       <div class="current-date" id="currentDate"></div>
       <div>
         <span class="test-info">All Features Enabled</span>
@@ -250,7 +250,7 @@
     </div>
     
     <div class="card-container">
-      <weather-chart-card-ha></weather-chart-card-ha>
+      <uninus-weather-chart-card></uninus-weather-chart-card>
     </div>
     
     <div class="status-bar">
@@ -336,7 +336,7 @@
     }
   </script>
 
-  <script type="module" src="./dist/weather-chart-card-ha.js"></script>
+  <script type="module" src="./dist/uninus-weather-chart-card.js"></script>
 
   <script>
     // Test Suite State
@@ -727,7 +727,7 @@
       }
       
       // Update card with new hass object
-      const card = document.querySelector('weather-chart-card-ha');
+      const card = document.querySelector('uninus-weather-chart-card');
       if (card) {
         // Create a deep copy to ensure reactivity
         const newHass = JSON.parse(JSON.stringify(mockHass));
@@ -752,7 +752,7 @@
       const currentCondition = mockHass.states['weather.home'].state;
       mockHass.states['weather.home'].attributes.description = getTranslatedDescription(currentCondition, langCode);
       
-      const card = document.querySelector('weather-chart-card-ha');
+      const card = document.querySelector('uninus-weather-chart-card');
       if (card) {
         // Update card config locale
         const currentConfig = card.config;
@@ -820,7 +820,7 @@
     function setForecastType(type) {
       currentForecastType = type;
       
-      const card = document.querySelector('weather-chart-card-ha');
+      const card = document.querySelector('uninus-weather-chart-card');
       if (card) {
         const currentConfig = card.config;
         currentConfig.forecast.type = type;
@@ -840,7 +840,7 @@
     
     // Set icon style
     function setIconStyle(style) {
-      const card = document.querySelector('weather-chart-card-ha');
+      const card = document.querySelector('uninus-weather-chart-card');
       if (card) {
         const currentConfig = card.config;
         currentConfig.icon_style = style;
@@ -860,8 +860,8 @@
     }
     
     // Wait for the custom element to be defined
-    customElements.whenDefined('weather-chart-card-ha').then(() => {
-      const card = document.querySelector('weather-chart-card-ha');
+    customElements.whenDefined('uninus-weather-chart-card').then(() => {
+      const card = document.querySelector('uninus-weather-chart-card');
       
       // Set config with all features enabled
       card.setConfig({

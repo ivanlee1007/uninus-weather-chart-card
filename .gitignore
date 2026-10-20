@@ -1,2 +1,17 @@
 /node_modules/
 .DS_Store
+
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+
+# Local logs and generated test reports
+*.log
+/coverage/
+/playwright-report/
+/test-results/
+
+# Generated release archive (published through GitHub Releases)
+/weather-chart-card-ha.zip
+/uninus-weather-chart-card.zip

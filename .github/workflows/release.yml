@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '24'
       
       - name: Diagnostic - Check environment
         run: |
@@ -40,8 +40,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Build
-        run: npm run build
+      - name: Install browser for regressions
+        run: npx playwright install --with-deps chromium
+
+      - name: Lint, build and regression tests
+        run: npm test
       
       - name: Verify build output
         run: |
@@ -57,17 +60,19 @@ jobs:
       - name: Package release files
         run: |
           cd dist
-          zip -r ../weather-chart-card-ha.zip weather-chart-card-ha.js icons/ icons2/
+          zip -r ../uninus-weather-chart-card.zip uninus-weather-chart-card.js weather-chart-card-ha.js weather-chart-card.js icons/ icons2/
           cd ..
-          echo "Package created: weather-chart-card-ha.zip"
-          unzip -l weather-chart-card-ha.zip
+          echo "Package created: uninus-weather-chart-card.zip"
+          unzip -l uninus-weather-chart-card.zip
       
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            weather-chart-card-ha.zip
+            uninus-weather-chart-card.zip
+            dist/uninus-weather-chart-card.js
             dist/weather-chart-card-ha.js
+            dist/weather-chart-card.js
           generate_release_notes: true
           draft: false
           prerelease: false

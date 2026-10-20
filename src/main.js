@@ -1869,9 +1869,9 @@ updateChart({ forecasts, forecastChart } = this) {
         .forecast-toggle:hover {
           opacity: 1;
         }
-        .attributes .water-percent, 
-        .attributes .pressure, 
-        .attributes .dew-point, 
+        .attributes .water-percent,
+        .attributes .pressure,
+        .attributes .dew-point,
         .attributes .visibility {
           direction: ltr;
           unicode-bidi: isolate;

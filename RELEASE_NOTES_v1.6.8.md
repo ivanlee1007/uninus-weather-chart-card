@@ -1,4 +1,6 @@
-# v1.6.8 — Last-valid weather snapshot（發布候選，未發布）
+# v1.6.8 — Last-valid weather snapshot
+
+GitHub Release 已於 2026-10-11 發布，tag 為 `v1.6.8`。以下保留發布前的驗證範圍與限制，不代表已完成正式 Home Assistant 現場驗證。
 
 ## 修復
 
@@ -10,4 +12,4 @@
 
 - 發布候選以原有 v1.6.7 `origin/master` 為基準，保留現有修復；本地 Edge 載入實際 built card、合成 hass，驗證重載／重建、混合預報、儲存異常、單位與警報；不是正式 HA 測試。原事故瀏覽器實例／版本及事件順序未能確認，不能宣稱現場根因已封閉。
 - 正式 Home Assistant、實體裝置、所有時區／設定排列尚未驗證。相同 origin 且站點識別資料完全相同可能共用快照 key。
-- 本檔僅為待審發布文案；未建立 tag、push、GitHub Release，亦未部署到 Home Assistant。
+- GitHub 發布不等同完成 Home Assistant 部署；本檔不宣稱已部署到正式站點。

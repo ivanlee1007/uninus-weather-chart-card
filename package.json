@@ -1,7 +1,7 @@
 {
-  "name": "weather-chart-card",
-  "version": "1.6.8",
-  "description": "UNiNUS Weather Chart Card with Home Assistant-native editor selectors and enhanced weather visualization",
+  "name": "uninus-weather-chart-card",
+  "version": "1.6.9",
+  "description": "uninus-weather-chart-card with Home Assistant-native editor selectors and enhanced weather visualization",
   "keywords": [
     "home-assistant",
     "homeassistant",
@@ -16,12 +16,12 @@
   "module": "src/main.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ivanlee1007/weather-chart-card.git"
+    "url": "https://github.com/ivanlee1007/uninus-weather-chart-card.git"
   },
   "bugs": {
-    "url": "https://github.com/ivanlee1007/weather-chart-card/issues"
+    "url": "https://github.com/ivanlee1007/uninus-weather-chart-card/issues"
   },
-  "homepage": "https://github.com/ivanlee1007/weather-chart-card#readme",
+  "homepage": "https://github.com/ivanlee1007/uninus-weather-chart-card#readme",
   "author": "Marc Lamberts, enhanced by Mihai, maintained by UNiNUS",
   "license": "MIT",
   "dependencies": {

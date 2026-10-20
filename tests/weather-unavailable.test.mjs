@@ -137,7 +137,7 @@ test('attached icon retains bundled → custom → MDI fallback and ignores repe
   img.src = 'https://invalid.example/sunny.svg';
   f.root.append(img);
   f.card.handleIconError({ target: img }, 'sunny', 'above_horizon');
-  assert.match(img.src, /hacsfiles\/weather-chart-card-ha\/icons\/clear-day.svg$/);
+  assert.match(img.src, /hacsfiles\/uninus-weather-chart-card\/icons\/clear-day.svg$/);
   f.card.handleIconError({ target: img }, 'sunny', 'above_horizon');
   assert.match(img.src, /custom\/clear-day.svg$/);
   f.card.handleIconError({ target: img }, 'sunny', 'above_horizon');

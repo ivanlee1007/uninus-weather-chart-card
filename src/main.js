@@ -505,7 +505,7 @@ getLocalizedDayName(date, timezone) {
   // Priority 1: Try translation array from locale.js
   const days = this.getLocaleArray('days');
   if (days && days[dayIndex] && typeof days[dayIndex] === 'string' && days[dayIndex].length > 0) {
-    const dayName = days[dayIndex].substring(0, 3);
+    const dayName = document.dir === 'rtl' ? days[dayIndex] : days[dayIndex].substring(0, 3);
     // Only uppercase for Latin-script languages
     return WeatherChartCard.LATIN_SCRIPT_REGEX.test(dayName) ? dayName.toUpperCase() : dayName;
   }
@@ -519,7 +519,7 @@ getLocalizedDayName(date, timezone) {
     });
     const formatted = dayFormatter.format(date);
     if (formatted && formatted.length > 0) {
-      const dayName = formatted.substring(0, 3);
+      const dayName = document.dir === 'rtl' ? formatted : formatted.substring(0, 3);
       // Only uppercase for Latin-script languages
       return WeatherChartCard.LATIN_SCRIPT_REGEX.test(dayName) ? dayName.toUpperCase() : dayName;
     }
@@ -1076,6 +1076,12 @@ drawChart({ config, language, weather, forecastItems } = this) {
 
         formattedValue = formattedValue.replace('\n', '\n\n');
 
+        if (document.dir === 'rtl') {
+          formattedValue = formattedValue.split('\n')
+            .map((line) => line ? `\u202B${line}\u202C` : line)
+            .join('\n');
+        }
+
         return formattedValue;
       },
         textAlign: 'center',
@@ -1628,6 +1634,7 @@ updateChart({ forecasts, forecastChart } = this) {
         .main .current-temp {
           font-size: ${config.current_temp_size}px;
           font-weight: 300;
+          direction: ltr;
         }
         .main .current-condition {
           font-size: 18px;
@@ -1643,7 +1650,6 @@ updateChart({ forecasts, forecastChart } = this) {
           align-items: center;
           margin-bottom: 6px;
       	  font-weight: 300;
-          direction: ltr;
         }
         .chart-container {
           position: relative;
@@ -1715,6 +1721,7 @@ updateChart({ forecasts, forecastChart } = this) {
         .date-text {
           font-size: ${config.day_date_size}px;
           color: var(--secondary-text-color);
+          direction: var(--direction);
         }
         .main .feels-like {
           font-size: 13px;
@@ -1861,6 +1868,13 @@ updateChart({ forecasts, forecastChart } = this) {
         }
         .forecast-toggle:hover {
           opacity: 1;
+        }
+        .attributes .water-percent,
+        .attributes .pressure,
+        .attributes .dew-point,
+        .attributes .visibility {
+          direction: ltr;
+          unicode-bidi: isolate;
         }
       </style>
 
@@ -2145,7 +2159,9 @@ updateClock() {
   const currentDayOfWeek = this.getLocalizedDayNameFull(currentDate, timezone);
   const monthName = this.getLocalizedMonthName(currentDate, timezone);
   const dayNumber = this.getLocalizedDayNumber(currentDate, this.config.locale, timezone);
-  const currentDateFormatted = monthName + ' ' + dayNumber;
+  const currentDateFormatted = (document.dir === 'rtl')
+    ? dayNumber + ' ' + monthName
+    : monthName + ' ' + dayNumber;
 
   const cardDiv = this.shadowRoot.querySelector('.card');
   if (cardDiv) {
@@ -2192,7 +2208,7 @@ renderClock({ config } = this) {
     <div class="current-time">
       ${config.show_forecast_toggle ? html`
         <button class="forecast-toggle" @click="${this.handleForecastTypeToggle.bind(this)}">
-          ${this.config.forecast.type === 'daily' ? 'Daily' : 'Hourly'}
+          ${this.ll(this.config.forecast.type === 'daily' ? 'daily' : 'hourly')}
         </button>
       ` : ''}
       <div id="digital-clock"></div>
@@ -2277,16 +2293,16 @@ return html`
       ${((showHumidity && humidity !== undefined) || (showPressure && Number.isFinite(Number(dPressure))) || (showDewpoint && dew_point !== undefined) || (showVisibility && visibility !== undefined)) ? html`
         <div>
           ${showHumidity && humidity !== undefined ? html`
-            <ha-icon icon="hass:water-percent"></ha-icon> ${humidity} %<br>
+            <ha-icon icon="hass:water-percent"></ha-icon> <span class="water-percent"> ${humidity} % </span> <br>
           ` : ''}
           ${showPressure && Number.isFinite(Number(dPressure)) ? html`
-            <ha-icon icon="hass:gauge"></ha-icon> ${dPressure} ${this.ll('units')[this.unitPressure]} <br>
+            <ha-icon icon="hass:gauge"></ha-icon> <span class="pressure"> ${dPressure} ${this.ll('units')[this.unitPressure]} </span> <br>
           ` : ''}
           ${showDewpoint && dew_point !== undefined ? html`
-            <ha-icon icon="hass:thermometer-water"></ha-icon> ${dew_point} ${this.weather.attributes.temperature_unit} <br>
+            <ha-icon icon="hass:thermometer-water"></ha-icon> <span class="dew-point">${dew_point} ${this.weather.attributes.temperature_unit} </span> <br>
           ` : ''}
           ${showVisibility && visibility !== undefined ? html`
-            <ha-icon icon="hass:eye"></ha-icon> ${visibility} ${this.weather.attributes.visibility_unit}
+            <ha-icon icon="hass:eye"></ha-icon> <span class="visibility">${visibility} ${this.weather.attributes.visibility_unit} </span>
           ` : ''}
         </div>
       ` : ''}
@@ -2294,7 +2310,7 @@ return html`
         <div>
           ${typeof uv_index !== 'undefined' && uv_index !== undefined ? html`
             <div>
-              <ha-icon icon="hass:white-balance-sunny"></ha-icon> UV: ${Math.round(uv_index * 10) / 10}
+              <ha-icon icon="hass:white-balance-sunny"></ha-icon> <span class="uv-index">UV: ${Math.round(uv_index * 10) / 10} </span>
             </div>
           ` : ''}
           ${showSun && sun !== undefined ? html`
@@ -2307,15 +2323,13 @@ return html`
       ${((showWindDirection && windDirection !== undefined) || (showWindSpeed && Number.isFinite(dWindSpeed))) ? html`
         <div>
           ${showWindDirection && windDirection !== undefined ? html`
-            <ha-icon icon="hass:${this.getWindDirIcon(windDirection)}"></ha-icon> ${this.getWindDir(windDirection)} <br>
+            <ha-icon icon="hass:${this.getWindDirIcon(windDirection)}"></ha-icon> <span class="wind-direction">${this.getWindDir(windDirection)} </span> <br>
           ` : ''}
           ${showWindSpeed && Number.isFinite(dWindSpeed) ? html`
-            <ha-icon icon="hass:weather-windy"></ha-icon>
-            ${dWindSpeed} ${this.ll('units')[this.unitSpeed]} <br>
+            <ha-icon icon="hass:weather-windy"></ha-icon> <span class="wind-speed-attribute"> ${dWindSpeed} ${this.ll('units')[this.unitSpeed]} </span> <br>
           ` : ''}
           ${showWindgustspeed && wind_gust_speed !== undefined ? html`
-            <ha-icon icon="hass:weather-windy-variant"></ha-icon>
-            ${wind_gust_speed} ${this.ll('units')[this.unitSpeed]}
+            <ha-icon icon="hass:weather-windy-variant"></ha-icon> <span class="wind-gust-speed">${wind_gust_speed} ${this.ll('units')[this.unitSpeed]} </span>
           ` : ''}
         </div>
       ` : ''}
